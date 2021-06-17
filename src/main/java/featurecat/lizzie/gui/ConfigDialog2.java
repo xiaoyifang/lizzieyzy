@@ -23,6 +23,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Paint;
 import java.awt.RadialGradientPaint;
 import java.awt.Rectangle;
@@ -83,6 +84,7 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
@@ -274,7 +276,7 @@ public class ConfigDialog2 extends JDialog {
   private JCheckBox chkLimitPlayouts;
 
   public ConfigDialog2() {
-    setAlwaysOnTop(true);
+    setAlwaysOnTop(Lizzie.frame.isAlwaysOnTop());
     setTitle(resourceBundle.getString("LizzieConfig.title.config"));
     setModalityType(ModalityType.APPLICATION_MODAL);
     // setType(Type.POPUP);
@@ -814,7 +816,7 @@ public class ConfigDialog2 extends JDialog {
           public void stateChanged(ChangeEvent e) {
             if (Lizzie.frame.BoardPositionProportion != sldBoardPositionProportion.getValue()) {
               Lizzie.frame.BoardPositionProportion = sldBoardPositionProportion.getValue();
-              Lizzie.frame.refreshBackground();
+              Lizzie.frame.refreshContainer();
             }
           }
         });
@@ -1813,15 +1815,100 @@ public class ConfigDialog2 extends JDialog {
       JLabel lblThemes = new JLabel(resourceBundle.getString("LizzieConfig.title.theme"));
       lblThemes.setBounds(10, 11, 163, 20);
       themeTab.add(lblThemes);
+
+      JButton btnDeleteTheme = new JButton(resourceBundle.getString("ConfigDialog2.deleteTheme"));
+      btnDeleteTheme.addActionListener(
+          new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+              SwingUtilities.invokeLater(
+                  new Runnable() {
+                    public void run() {
+                      int ret =
+                          JOptionPane.showConfirmDialog(
+                              Lizzie.frame.configDialog2,
+                              resourceBundle.getString("ConfigDialog2.deleteThemeWarning")
+                                  + "\'"
+                                  + cmbThemes.getSelectedItem().toString()
+                                  + "\'"
+                                  + " ?",
+                              resourceBundle.getString("LizzieFrame.warning"),
+                              JOptionPane.OK_CANCEL_OPTION);
+                      if (ret == JOptionPane.YES_NO_OPTION) {
+                        String currentRealPath = "";
+                        File file = new File("");
+                        try {
+                          currentRealPath = file.getCanonicalPath();
+                        } catch (IOException e) {
+                          // TODO Auto-generated catch block
+                          e.printStackTrace();
+                        }
+                        if (Utils.deleteDir(
+                            new File(
+                                currentRealPath
+                                    + Utils.pwd
+                                    + "theme"
+                                    + Utils.pwd
+                                    + cmbThemes.getSelectedItem().toString()))) {
+                          Utils.showMsg(
+                              resourceBundle.getString("ConfigDialog2.deleteThemeSuccess"));
+                          setVisible(false);
+                          Lizzie.frame.openConfigDialog2(1);
+                        } else
+                          Utils.showMsg(
+                              resourceBundle.getString("ConfigDialog2.deleteThemeFailed"));
+                      }
+                    }
+                  });
+            }
+          });
+      btnDeleteTheme.setMargin(new Insets(0, 0, 0, 0));
+      btnDeleteTheme.setBounds(435, 11, 50, 20);
+      themeTab.add(btnDeleteTheme);
+
       cmbThemes = new JComboBox(themeList.toArray(new String[0]));
       cmbThemes.addItemListener(
           new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
               if (isLoadedTheme) readThemeValues();
+              if (cmbThemes.getSelectedIndex() == 0) btnDeleteTheme.setEnabled(false);
+              else btnDeleteTheme.setEnabled(true);
             }
           });
       cmbThemes.setBounds(175, 11, 199, 20);
       themeTab.add(cmbThemes);
+
+      JButton btnAddTheme = new JButton(resourceBundle.getString("ConfigDialog2.addTheme"));
+      btnAddTheme.addActionListener(
+          new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+              SwingUtilities.invokeLater(
+                  new Runnable() {
+                    public void run() {
+                      String themeName =
+                          JOptionPane.showInputDialog(
+                              Lizzie.frame.configDialog2,
+                              null,
+                              resourceBundle.getString("ConfigDialog2.inputThemeNameTitle"),
+                              JOptionPane.INFORMATION_MESSAGE);
+                      if (themeName != null) {
+                        for (String name : themeList) {
+                          if (themeName.toLowerCase().equals(name.toLowerCase())) {
+                            Utils.showMsg(
+                                resourceBundle.getString("ConfigDialog2.duplicateThemeName"));
+                            return;
+                          }
+                        }
+                        Utils.addNewThemeAs(themeName);
+                        setVisible(false);
+                        Lizzie.frame.openConfigDialog2(1);
+                      }
+                    }
+                  });
+            }
+          });
+      btnAddTheme.setMargin(new Insets(0, 0, 0, 0));
+      btnAddTheme.setBounds(385, 11, 50, 20);
+      themeTab.add(btnAddTheme);
 
       JLabel lblWinrateStrokeWidth =
           new JLabel(resourceBundle.getString("LizzieConfig.title.winrateStrokeWidth"));
@@ -1865,8 +1952,12 @@ public class ConfigDialog2 extends JDialog {
       cmbFontName.addItemListener(
           new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-              cmbFontName.setFont(
-                  new Font((String) e.getItem(), Font.PLAIN, cmbFontName.getFont().getSize()));
+              String fontName = (String) e.getItem();
+              if (fontName.equals("Lizzie默认") || fontName.equals("Lizzie Default"))
+                cmbFontName.setFont(Lizzie.frame.uiFont);
+              else
+                cmbFontName.setFont(
+                    new Font(fontName, Font.PLAIN, cmbUiFontName.getFont().getSize()));
             }
           });
       themeTab.add(cmbFontName);
@@ -1877,12 +1968,12 @@ public class ConfigDialog2 extends JDialog {
       cmbUiFontName = new JComboBox(fonts);
       cmbUiFontName.setMaximumRowCount(16);
       cmbUiFontName.setBounds(175, 163, 200, 20);
-      cmbUiFontName.setRenderer(new FontComboBoxRenderer());
+      cmbUiFontName.setRenderer(new UiFontComboBoxRenderer());
       cmbUiFontName.addItemListener(
           new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
               cmbUiFontName.setFont(
-                  new Font((String) e.getItem(), Font.PLAIN, cmbUiFontName.getFont().getSize()));
+                  new Font((String) e.getItem(), Font.PLAIN, cmbFontName.getFont().getSize()));
             }
           });
       themeTab.add(cmbUiFontName);
@@ -1894,13 +1985,16 @@ public class ConfigDialog2 extends JDialog {
       cmbWinrateFontName = new JComboBox(fonts);
       cmbWinrateFontName.setMaximumRowCount(16);
       cmbWinrateFontName.setBounds(175, 193, 200, 20);
-      cmbWinrateFontName.setRenderer(new FontComboBoxRenderer());
+      cmbWinrateFontName.setRenderer(new WinrateFontComboBoxRenderer());
       cmbWinrateFontName.addItemListener(
           new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-              cmbWinrateFontName.setFont(
-                  new Font(
-                      (String) e.getItem(), Font.PLAIN, cmbWinrateFontName.getFont().getSize()));
+              String fontName = (String) e.getItem();
+              if (fontName.equals("Lizzie默认") || fontName.equals("Lizzie Default"))
+                cmbWinrateFontName.setFont(Lizzie.frame.uiFont);
+              else
+                cmbWinrateFontName.setFont(
+                    new Font(fontName, Font.PLAIN, cmbUiFontName.getFont().getSize()));
             }
           });
       themeTab.add(cmbWinrateFontName);
@@ -2205,6 +2299,8 @@ public class ConfigDialog2 extends JDialog {
       cmbThemes.setSelectedItem(
           Lizzie.config.uiConfig.optString(
               "theme", resourceBundle.getString("LizzieConfig.title.defaultTheme")));
+      if (cmbThemes.getSelectedIndex() == 0) btnDeleteTheme.setEnabled(false);
+      else btnDeleteTheme.setEnabled(true);
 
       chkShowStoneShaow = new JCheckBox(resourceBundle.getString("LizzieConfig.title.shadowSize"));
       chkShowStoneShaow.setBounds(6, 101, 131, 23);
@@ -2480,6 +2576,7 @@ public class ConfigDialog2 extends JDialog {
               new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                   pnlBoardPreview.repaint();
+                  if (tabbedPane.getSelectedIndex() == 1) tabbedPane.repaint();
                   // table.validate();
                   // table.updateUI();
                 }
@@ -2634,6 +2731,32 @@ public class ConfigDialog2 extends JDialog {
   }
 
   private class FontComboBoxRenderer<E> extends JLabel implements ListCellRenderer<E> {
+    @Override
+    public Component getListCellRendererComponent(
+        JList<? extends E> list, E value, int index, boolean isSelected, boolean cellHasFocus) {
+      final String fontName = (String) value;
+      setText(fontName);
+      if (fontName != null && (fontName.equals("Lizzie默认") || fontName.equals("Lizzie Default")))
+        setFont(Lizzie.frame.uiFont);
+      else setFont(new Font(fontName, Font.PLAIN, 12));
+      return this;
+    }
+  }
+
+  private class WinrateFontComboBoxRenderer<E> extends JLabel implements ListCellRenderer<E> {
+    @Override
+    public Component getListCellRendererComponent(
+        JList<? extends E> list, E value, int index, boolean isSelected, boolean cellHasFocus) {
+      final String fontName = (String) value;
+      setText(fontName);
+      if (fontName != null && (fontName.equals("Lizzie默认") || fontName.equals("Lizzie Default")))
+        setFont(Lizzie.frame.winrateFont);
+      else setFont(new Font(fontName, Font.PLAIN, 12));
+      return this;
+    }
+  }
+
+  private class UiFontComboBoxRenderer<E> extends JLabel implements ListCellRenderer<E> {
     @Override
     public Component getListCellRendererComponent(
         JList<? extends E> list, E value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -3043,7 +3166,7 @@ public class ConfigDialog2 extends JDialog {
   }
 
   private void setFontValue(JComboBox<String> cmb, String fontName) {
-    cmb.setSelectedIndex(0);
+    cmb.setSelectedIndex(-1);
     cmb.setSelectedItem(fontName);
   }
 
@@ -3219,9 +3342,9 @@ public class ConfigDialog2 extends JDialog {
     spnMinimumBlunderBarWidth.setValue(
         Lizzie.config.uiConfig.optInt("minimum-blunder-bar-width", 3));
     spnShadowSize.setValue(Lizzie.config.uiConfig.optInt("shadow-size", 100));
-    cmbFontName.setSelectedItem(Lizzie.config.uiConfig.optString("font-name", null));
-    cmbUiFontName.setSelectedItem(Lizzie.config.uiConfig.optString("ui-font-name", null));
-    cmbWinrateFontName.setSelectedItem(Lizzie.config.uiConfig.optString("winrate-font-name", null));
+    setFontValue(cmbFontName, Lizzie.config.uiConfig.optString("font-name", null));
+    setFontValue(cmbUiFontName, Lizzie.config.uiConfig.optString("ui-font-name", null));
+    setFontValue(cmbWinrateFontName, Lizzie.config.uiConfig.optString("winrate-font-name", null));
     txtBackgroundPath.setEnabled(false);
     btnBackgroundPath.setEnabled(false);
     txtBackgroundPath.setText("/assets/background.jpg");

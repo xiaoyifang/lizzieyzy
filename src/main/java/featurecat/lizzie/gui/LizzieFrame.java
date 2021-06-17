@@ -2538,6 +2538,7 @@ public class LizzieFrame extends JFrame {
   }
 
   public void tryPlay(boolean needRefresh) {
+    if (Lizzie.engineManager.isEngineGame || Lizzie.engineManager.isPreEngineGame) return;
     if (!isTrying) {
       isTrying = true;
       try {
@@ -3179,7 +3180,7 @@ public class LizzieFrame extends JFrame {
   }
 
   public void saveOriFile() {
-    if (curFile != null) {
+    if (curFile != null && !curFile.getName().toLowerCase().endsWith(".gib")) {
       if (Lizzie.config.showReplaceFileHint) {
         Box box = Box.createVerticalBox();
         JFontLabel label =
@@ -4368,6 +4369,7 @@ public class LizzieFrame extends JFrame {
 
           int vh = trueHeight;
           int vw = trueWidth / 8 * BoardPositionProportion;
+          if (noVariation && noListPane && noSubBoard) vw = trueWidth;
           int vx = 0;
           int vy = 0;
           if (this.independentMainBoard != null)
@@ -4490,7 +4492,8 @@ public class LizzieFrame extends JFrame {
           }
 
           vh = trueHeight;
-          vw = trueWidth - trueWidth / 8 * BoardPositionProportion;
+          if (noBasic && noWinrate && noComment) vw = trueWidth;
+          else vw = trueWidth - trueWidth / 8 * BoardPositionProportion;
           vx = trueWidth - vw;
           vy = 0;
 
@@ -5219,8 +5222,9 @@ public class LizzieFrame extends JFrame {
    * Lizzie 0.5 today, not tomorrow!). Refactor me out please! (you need to get blurring to work
    * properly on startup).
    */
-  public void refreshBackground() {
+  public void refreshContainer() {
     redrawBackgroundAnyway = true;
+    if (extraMode == 8) this.paintMianPanel(mainPanel.getGraphics());
   }
 
   public void refresh() {
@@ -5592,7 +5596,7 @@ public class LizzieFrame extends JFrame {
       lineOffset += lineHeight;
     }
     showControls = true;
-    refreshBackground();
+    refreshContainer();
     Lizzie.board.setForceRefresh(true);
   }
 
@@ -10618,7 +10622,8 @@ public class LizzieFrame extends JFrame {
       } else {
         isPlayoutPercents = false;
       }
-      if (table.getValueAt(row, 0).toString().length() > 3) {
+      String move = table.getValueAt(row, 0).toString();
+      if (move.length() > 3 && !move.toLowerCase().equals("pass")) {
         isNextMove = true;
         String winrate = table.getValueAt(row, 2).toString();
         if (winrate.contains("("))
@@ -11041,7 +11046,8 @@ public class LizzieFrame extends JFrame {
             loadFile(
                 new File(
                     (isAutoSave ? "save" + Utils.pwd + "autoGame" : "save" + Utils.pwd + "game")
-                        + index),
+                        + index
+                        + ".sgf"),
                 true,
                 true);
             if (!moveList.equals("")) Lizzie.board.playList(moveList);
@@ -11560,7 +11566,8 @@ public class LizzieFrame extends JFrame {
                           (data.isAutoSave
                                   ? "save" + Utils.pwd + "autoGame"
                                   : "save" + Utils.pwd + "game")
-                              + data.index),
+                              + data.index
+                              + ".sgf"),
                       true,
                       true);
                   if (!data.moves.equals("")) Lizzie.board.playList(data.moves);
@@ -11624,7 +11631,8 @@ public class LizzieFrame extends JFrame {
               loadFile(
                   new File(
                       (isAutoSave ? "save" + Utils.pwd + "autoGame" : "save" + Utils.pwd + "game")
-                          + index),
+                          + index
+                          + ".sgf"),
                   true,
                   true);
               if (!moveList.equals("")) Lizzie.board.playList(moveList);

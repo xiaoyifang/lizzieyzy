@@ -1,8 +1,13 @@
 {
   "comment-font-size": 0,
-  "shadow-size": 100,
+  "shadow-size": 85,
   "stone-indicator-type": 0,
-  "ui-font-name": "Lizzie默认",
+  "ui-font-name": "Lizzie Default",
+  "blunder-bar-color": [
+    255,
+    204,
+    255
+  ],
   "use-pure-stone": false,
   "winrate-stroke-width": 1.7,
   "comment-node-color": [
@@ -10,7 +15,7 @@
     0,
     255
   ],
-  "background-image": "background.png",
+  "background-image": "background.jpg",
   "winrate-line-color": [
     0,
     255,
@@ -36,7 +41,8 @@
   "best-move-color": [
     0,
     255,
-    255
+    255,
+    240
   ],
   "white-stone-image": "white.png",
   "black-stone-image": "black.png",
@@ -49,7 +55,7 @@
     152,
     77
   ],
-  "winrate-font-name": "Lizzie默认",
+  "winrate-font-name": "Lizzie Default",
   "minimum-blunder-bar-width": 3,
   "show-stone-shadow": true,
   "winrate-miss-line-color": [
@@ -70,7 +76,12 @@
     128,
     128
   ],
-  "font-name": "Lizzie默认",
+  "scoremean-line-color": [
+    255,
+    0,
+    255
+  ],
+  "font-name": "Lizzie Default",
   "use-pure-background": false,
   "show-comment-node-color": true,
   "use-pure-board": false

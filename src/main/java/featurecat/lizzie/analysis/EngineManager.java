@@ -128,11 +128,12 @@ public class EngineManager {
     if (index == -1) {
       Lizzie.leelaz.isKatago = true;
       Lizzie.leelaz.isLoaded = true;
-      Lizzie.frame.addInput(false);
       featurecat.lizzie.gui.Menu.engineMenu.setText(resourceBundle.getString("Menu.noEngine"));
       if (Lizzie.frame.extraMode == 2)
         featurecat.lizzie.gui.Menu.engineMenu2.setText(resourceBundle.getString("Menu.noEngine"));
       isEmpty = true;
+      LizzieFrame.menu.updateMenuStatusForEngine();
+      Lizzie.frame.reSetLoc();
       Lizzie.frame.addInput(false);
       new Thread() {
         public void run() {
@@ -147,6 +148,8 @@ public class EngineManager {
     }
     Lizzie.gtpConsole.console.setText("");
     autoCheckEngineAlive(Lizzie.config.autoCheckEngineAlive);
+    if (Lizzie.config.uiConfig.optBoolean("autoload-empty", false) && Lizzie.config.showStatus)
+      Lizzie.frame.refresh();
   }
 
   public void autoCheckEngineAlive(boolean enable) {
@@ -185,6 +188,7 @@ public class EngineManager {
       boolean isContinueGame,
       boolean isGenmove,
       boolean isExchange) {
+    if (Lizzie.frame.isTrying) Lizzie.frame.tryPlay(false);
     engineGameInfo = new EngineGameInfo();
     if (!isEmpty && Lizzie.leelaz != null) {
       Lizzie.leelaz.clearBestMoves();
@@ -1664,7 +1668,8 @@ public class EngineManager {
                 || Lizzie.leelaz.oriHeight != Lizzie.board.boardHeight) {
               Lizzie.board.reopen(Lizzie.leelaz.oriWidth, Lizzie.leelaz.oriHeight);
             }
-            if (Lizzie.leelaz.orikomi != Lizzie.board.getHistory().getGameInfo().getKomi())
+            if (Lizzie.leelaz.orikomi != Lizzie.board.getHistory().getGameInfo().getKomi()
+                && !Lizzie.board.getHistory().getGameInfo().changedKomi)
               Lizzie.leelaz.komi(Lizzie.leelaz.orikomi);
           }
           Lizzie.leelaz.isCheckingName = true;

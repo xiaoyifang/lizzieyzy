@@ -59,7 +59,6 @@ public class BoardHistoryList {
 
   public void toBranchTop() {
     BoardHistoryNode start = head;
-    BoardHistoryNode top = start;
     while (start.previous().isPresent()) {
       BoardHistoryNode pre = start.previous().get();
       if (pre.next(true).isPresent() && pre.next(true).get() != start) {
@@ -100,17 +99,8 @@ public class BoardHistoryList {
     head = head.addOrGoto(data, newBranch);
   }
 
-  public void addOrGoto2(BoardData data, boolean newBranch, boolean changeMove) {
-    head = head.addOrGoto2(data, newBranch, changeMove);
-  }
-
   public void addOrGoto(BoardData data, boolean newBranch, boolean changeMove) {
-    head = head.addOrGoto(data, newBranch, changeMove, true);
-  }
-
-  public void addOrGoto(
-      BoardData data, boolean newBranch, boolean changeMove, boolean clearAfterMove) {
-    head = head.addOrGoto(data, newBranch, changeMove, clearAfterMove);
+    head = head.addOrGoto(data, newBranch, changeMove);
   }
 
   /**
@@ -247,6 +237,11 @@ public class BoardHistoryList {
 
   public boolean isEmptyBoard() {
     if (!head.previous().isPresent() && !head.next().isPresent()) return true;
+    else return false;
+  }
+
+  public boolean noStoneBoard() {
+    if (!head.previous().isPresent() && !Lizzie.board.hasStartStone) return true;
     else return false;
   }
 
@@ -428,7 +423,7 @@ public class BoardHistoryList {
       newState.dummy = dummy;
 
       // update history with pass
-      this.addOrGoto(newState, newBranch, changeMove);
+      this.addOrGoto(newState, newBranch);
     }
   }
 
@@ -534,9 +529,9 @@ public class BoardHistoryList {
       }
 
       // update history with this coordinate
-      this.addOrGoto(newState, newBranch, changeMove, false);
+      this.addOrGoto(newState, newBranch, changeMove);
       //   Lizzie.board.modifyEnd();
-      Lizzie.frame.renderVarTree(0, 0, false, false);
+      // Lizzie.frame.renderVarTree(0, 0, false, false);
     }
   }
 

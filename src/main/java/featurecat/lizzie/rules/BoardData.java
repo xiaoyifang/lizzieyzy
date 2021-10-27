@@ -1,8 +1,11 @@
 package featurecat.lizzie.rules;
 
 import featurecat.lizzie.Lizzie;
+import featurecat.lizzie.analysis.EngineManager;
 //import featurecat.lizzie.analysis.Leelaz;
 import featurecat.lizzie.analysis.MoveData;
+import featurecat.lizzie.gui.LizzieFrame;
+
 import java.util.*;
 
 public class BoardData {
@@ -27,10 +30,12 @@ public class BoardData {
 	public double scoreMean2;
 	public double scoreStdev;
 	public double scoreStdev2;
-	public double scoreMeanBoard;
-	public double scoreMeanBoard2;
+	//public double scoreMeanBoard;
+	//public double scoreMeanBoard2;
 	public List<MoveData> bestMoves;
+	public List<MoveData> bestMovesOutOfRange;
 	public List<MoveData> bestMoves2;
+	public List<MoveData> bestMoves2OutOfRange;
 	public int blackCaptures;
 	public int whiteCaptures;
 	public boolean isChanged = false;
@@ -48,6 +53,7 @@ public class BoardData {
 		public double pda=0;
 		public double pda2=0;
 		public double komi=-999;
+		public double wrn = 0;
 	//	public boolean commented=true;
 	//	public boolean commented2=true;
 	
@@ -186,22 +192,16 @@ public class BoardData {
 		}
 	}
 
-	public void tryToSetBestMoves(List<MoveData> moves,String engName,boolean isFromLeelaz) {
-		// MoveData.getPlayouts(moves) > playouts
-//		if(moves.isEmpty())
-//			return;
-		int plyouts= MoveData.getPlayouts(moves);
-		if(Lizzie.config.enableLizzieCache&&!Lizzie.config.isAutoAna&&!Lizzie.engineManager.isEngineGame) {
-			if (!(plyouts > playouts ||isChanged||pda!=Lizzie.leelaz.pda)) {
+	public void tryToSetBestMoves(List<MoveData> moves,String engName,boolean isFromLeelaz,int totalplayouts) {
+		if(Lizzie.config.enableLizzieCache&&!Lizzie.config.isAutoAna&&!EngineManager.isEngineGame) {
+			if (!(totalplayouts > playouts ||isChanged||pda!=Lizzie.leelaz.pda)) {
 				return;
 			}
 		}
-		//commented=false;
-	//	isPDA=isPdaEngine;
 				// added for change bestmoves when playouts is not increased
-				if(plyouts<playouts)
+				if(totalplayouts<playouts)
 					isChanged=false;
-				setPlayouts(plyouts);
+				setPlayouts(totalplayouts);
 				winrate = moves.get(0).winrate;	
 				if (moves.get(0).isKataData) {					
 					scoreMean = moves.get(0).scoreMean;
@@ -210,18 +210,11 @@ public class BoardData {
 					Lizzie.leelaz.scoreMean = moves.get(0).scoreMean;
 					Lizzie.leelaz.scoreStdev = moves.get(0).scoreStdev;}
 					isKataData=true;
-					if(blackToPlay)
-					scoreMeanBoard = moves.get(0).scoreMean+Lizzie.board.getHistory().getGameInfo().getKomi();
-					else
-						scoreMeanBoard=-moves.get(0).scoreMean+Lizzie.board.getHistory().getGameInfo().getKomi();
 				}				
 				else
-					isKataData=false;
-				if(moves.get(0).isSaiData)				
-					isSaiData=true;				
-				else
-					isSaiData=false;
-				 engineName=engName.replaceAll(" ", "");
+					isKataData=false;			
+					isSaiData=moves.get(0).isSaiData;			
+				 engineName=engName;
 				 komi=Lizzie.board.getHistory().getGameInfo().getKomi();
 				 if(isFromLeelaz)
 				 {if(Lizzie.leelaz.isDymPda||Lizzie.leelaz.pda!=0)
@@ -230,6 +223,8 @@ public class BoardData {
 				 }
 				 else
 					 pda=0;}
+				 if(!(EngineManager.isEngineGame&&EngineManager.engineGameInfo.isGenmove))
+				 wrn=Lizzie.leelaz.wrn;				 
 				 //排序
 				 Collections.sort(
 						 moves,
@@ -244,48 +239,76 @@ public class BoardData {
 				              }
 				            });
 				 
-				   if (Lizzie.config.limitMaxSuggestion > 0
-					        && !Lizzie.config.showNoSuggCircle
-					        && (moves.size() > Lizzie.config.limitMaxSuggestion)) {       	
-					      if(Lizzie.frame.priorityMoveCoords.size()>0) {    	 
-					    	  for(int n=Lizzie.config.limitMaxSuggestion;n<moves.size();n++)
-					    	  {
-					    		  MoveData move=moves.get(n);
-					    		  boolean needSkip=false;
-					    		  for(String coords:Lizzie.frame.priorityMoveCoords)
-					    		  {if(move.coordinate.equals(coords))
-					    		  {		
-					    			  needSkip=true;
-					    				continue;
-					    		  }
-					    		  }
-					    		  if(!needSkip)
-					    		  {moves.remove(move);	
-					    		  n--;}
-					    	  }
-					      }
-					    	  else
-					    		  moves = moves.subList(0, Lizzie.config.limitMaxSuggestion);					     
-					    }
+				tryToLimitMoves(moves,bestMoves,true);
 				   bestMoves = moves;
 			}
 		
 	
-	public void tryToSetBestMoves2(List<MoveData> moves,String engName,boolean isFromLeelaz) {
-		// MoveData.getPlayouts(moves) > playouts
-//		if(moves.isEmpty())
-//			return;
-		int plyouts= MoveData.getPlayouts(moves);
+	private void tryToLimitMoves(List<MoveData> moves,List<MoveData> lastMoves,boolean isMain) {
+		// TODO Auto-generated method stub		
+		List<MoveData> outOfRangeMoves = new ArrayList<>();
+		   if (Lizzie.config.limitMaxSuggestion > 0
+			        && !Lizzie.config.showNoSuggCircle
+			        && (moves.size() > Lizzie.config.limitMaxSuggestion)) { 
+			    	  for(int n=Lizzie.config.limitMaxSuggestion;n<moves.size();n++)
+			    	  {
+			    		  MoveData move=moves.get(n);					    		  
+			    		  boolean needSkip=false;
+			    		  int absoluteMaxSuggestionOrder=Lizzie.config.limitMaxSuggestion+1;
+			    		  if(move.order<absoluteMaxSuggestionOrder) {
+			    			for(int s=0;s<absoluteMaxSuggestionOrder&&s<lastMoves.size();s++)  
+			    			{
+			    				MoveData lastBestMove=lastMoves.get(s);
+			    				if(s>=Lizzie.config.limitMaxSuggestion) {
+			    					if(!lastBestMove.lastTimeUnlimited)
+			    						continue;
+			    				}
+			    				if(move.coordinate.equals(lastBestMove.coordinate)) {			    					
+			    					 move.lastTimeUnlimited=true;
+			    					 if(move.playouts>lastBestMove.playouts||!lastBestMove.lastTimeUnlimited)
+			    					 { 
+			    						 move.lastTimeUnlimitedTime=System.currentTimeMillis();
+			    						 needSkip=true;
+			    					 }
+			    					 else if(System.currentTimeMillis()-lastBestMove.lastTimeUnlimitedTime<3000)
+			    						 { 
+			    						 move.lastTimeUnlimitedTime=lastBestMove.lastTimeUnlimitedTime;
+			    						 needSkip=true;
+			    						 }			    							    						
+			    					continue;
+			    				}
+			    			}
+			    		  }
+			    		  if(Lizzie.frame.priorityMoveCoords.size()>0&&!needSkip) 
+			    		  {
+			    			  for(String coords:Lizzie.frame.priorityMoveCoords)
+			    		  {if(move.coordinate.equals(coords))
+			    		  {		
+			    			  needSkip=true;
+			    				continue;
+			    		  }
+			    		  }
+			    		  }
+			    		  if(!needSkip)
+			    		  {
+			    			  outOfRangeMoves.add(move); 
+			    			  moves.remove(move);	
+			    		  n--;}
+			    	  }		
+			    	  if(isMain) bestMovesOutOfRange=outOfRangeMoves;
+			    	  else bestMoves2OutOfRange=outOfRangeMoves;
+			    }
+	}
+
+	public void tryToSetBestMoves2(List<MoveData> moves,String engName,boolean isFromLeelaz,int totalplayouts) {
 		if(Lizzie.config.enableLizzieCache&&!Lizzie.config.isAutoAna) {
-			if(!(plyouts > playouts2 ||isChanged2||pda!=Lizzie.leelaz.pda)) {//||Lizzie.frame.urlSgf
+			if(!(totalplayouts > playouts2 ||isChanged2||pda!=Lizzie.leelaz.pda)) {//||Lizzie.frame.urlSgf
 				return;
 			}
 		}
-		//commented2=false;
-	//	isPDA2=isPdaEngine;
-				if(plyouts<playouts2)
+				if(totalplayouts<playouts2)
 					isChanged2=false;
-				setPlayouts2(plyouts);
+				setPlayouts2(totalplayouts);
 				winrate2 = moves.get(0).winrate;							
 				if (moves.get(0).isKataData) {					
 					scoreMean2 = moves.get(0).scoreMean;
@@ -293,19 +316,12 @@ public class BoardData {
 					if(Lizzie.leelaz2!=null	&&isFromLeelaz) {
 					Lizzie.leelaz2.scoreMean = moves.get(0).scoreMean;
 					Lizzie.leelaz2.scoreStdev = moves.get(0).scoreStdev;}
-					if(blackToPlay)
-						scoreMeanBoard2 = moves.get(0).scoreMean+Lizzie.board.getHistory().getGameInfo().getKomi();
-						else
-							scoreMeanBoard2=-moves.get(0).scoreMean+Lizzie.board.getHistory().getGameInfo().getKomi();
 					isKataData2=true;
 				}
 				else
-					isKataData2=false;
-				if(moves.get(0).isSaiData)				
-					isSaiData2=true;				
-				else
-					isSaiData2=false;
-				 engineName2=engName.replaceAll(" ", "");
+					isKataData2=false;		
+					isSaiData2=moves.get(0).isSaiData;			
+				 engineName2=engName;
 					if(isFromLeelaz) {
 				 if(Lizzie.leelaz2!=null&&(Lizzie.leelaz2.isDymPda||Lizzie.leelaz2.pda!=0))
 				 {
@@ -325,29 +341,7 @@ public class BoardData {
 				                return 0;
 				              }
 				            });
-				   if (Lizzie.config.limitMaxSuggestion > 0
-					        && !Lizzie.config.showNoSuggCircle
-					        && (moves.size() > Lizzie.config.limitMaxSuggestion)) {       	
-					      if(Lizzie.frame.priorityMoveCoords.size()>0) {    	 
-					    	  for(int n=Lizzie.config.limitMaxSuggestion;n<moves.size();n++)
-					    	  {
-					    		  MoveData move=moves.get(n);
-					    		  boolean needSkip=false;
-					    		  for(String coords:Lizzie.frame.priorityMoveCoords)
-					    		  {if(move.coordinate.equals(coords))
-					    		  {		
-					    			  needSkip=true;
-					    				continue;
-					    		  }
-					    		  }
-					    		  if(!needSkip)
-					    		  {moves.remove(move);	
-					    		  n--;}
-					    	  }
-					      }
-					    	  else
-					    		  moves = moves.subList(0, Lizzie.config.limitMaxSuggestion);					     
-					    }
+				 tryToLimitMoves(moves,bestMoves2,false);
 				   bestMoves2 = moves;
 			}	
 
@@ -380,7 +374,7 @@ public class BoardData {
 		int i=0;		
 		for (MoveData move : bestMoves) {
 			i++;
-			if(Lizzie.frame.isShareing&&i>10)
+			if(LizzieFrame.isShareing&&i>10)
 				break;
 			// eg: info move R5 visits 38 winrate 5404 pv R5 Q5 R6 S4 Q10 C3 D3 C4 C6 C5 D5
 			sb.append("move ").append(move.coordinate);
@@ -388,7 +382,7 @@ public class BoardData {
 			sb.append(" winrate ").append((int) (move.winrate * 100));
 			sb.append(" prior ").append((int) (move.policy * 100));
 			if (isKataData)
-				sb.append(" scoreMean ").append(String.format("%.2f", move.scoreMean));
+				sb.append(" scoreMean ").append(String.format(Locale.ENGLISH,"%.2f", move.scoreMean));
 			sb.append(" pv ").append(move.variation==null?"":move.variation.stream().reduce((a, b) -> a + " " + b).get());
 			if (isKataData&&move.pvVisits!=null)
 				sb.append(" pvVisits ").append(move.pvVisits.stream().reduce((a, b) -> a + " " + b).get());
@@ -403,7 +397,7 @@ public class BoardData {
 		int i=0;
 		for (MoveData move : bestMoves2) {
 			i++;
-			if(Lizzie.frame.isShareing&&i>10)
+			if(LizzieFrame.isShareing&&i>10)
 				break;
 			// eg: info move R5 visits 38 winrate 5404 pv R5 Q5 R6 S4 Q10 C3 D3 C4 C6 C5 D5
 			sb.append("move ").append(move.coordinate);
@@ -468,7 +462,7 @@ public class BoardData {
 		this.verify = data.verify;
 		this.blackCaptures = data.blackCaptures;
 		this.whiteCaptures = data.whiteCaptures;
-		this.comment = data.comment;
+		this.comment = data.comment;		
 	}
 
 	public BoardData clone() {

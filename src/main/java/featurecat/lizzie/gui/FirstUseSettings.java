@@ -24,6 +24,9 @@ public class FirstUseSettings extends JDialog {
   private JFontTextField txtLimitVariation;
   private JFontTextField txtMaxAnalyzeTime;
   private JFontTextField txtMaxAnalyzePlayouts;
+  private JFontCheckBox chkPlayouts;
+  private JFontCheckBox chkScoreLead;
+  private JFontCheckBox chkWinrate;
   private JCheckBox chkLimitTime;
   private JCheckBox chkLimitPlayouts;
   private JDialog thisDialog = this;
@@ -35,12 +38,12 @@ public class FirstUseSettings extends JDialog {
     setResizable(false);
     setTitle(Lizzie.resourceBundle.getString("FirstUseSettings.title")); // ("初始化设置");
     setAlwaysOnTop(true);
-    // setSize(1076, 538);
+    setSize(1076, 538);
     Lizzie.setFrameSize(
         this,
         Lizzie.config.isFrameFontSmall() ? 656 : (Lizzie.config.isFrameFontMiddle() ? 785 : 955),
         524);
-    setLocationRelativeTo(null);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
     getContentPane().setLayout(null);
 
     ImageIcon iconSettings = new ImageIcon();
@@ -236,7 +239,7 @@ public class FirstUseSettings extends JDialog {
 
     JFontLabel lblScoreOnBoard =
         new JFontLabel(
-            Lizzie.resourceBundle.getString("FirstUseSettings.lblScoreOnBoard")); // ("目差在选点上显示为:");
+            Lizzie.resourceBundle.getString("FirstUseSettings.lblShowScore")); // ("目差在选点上显示为:");
     lblScoreOnBoard.setBounds(10, 86, 337, 22);
     getContentPane().add(lblScoreOnBoard);
 
@@ -266,38 +269,36 @@ public class FirstUseSettings extends JDialog {
     group3.add(rdoScoreOnBoardWithKomi);
     group3.add(rdoScoreOnBoardWithOutKomi);
 
-    JFontLabel lblScoreOnWinratePane =
+    JFontLabel lblWinratePerspective =
         new JFontLabel(
             Lizzie.resourceBundle.getString(
-                "FirstUseSettings.lblScoreOnWinratePane")); // ("目差在胜率图上显示为:");
-    lblScoreOnWinratePane.setBounds(10, 126, 337, 22);
-    getContentPane().add(lblScoreOnWinratePane);
+                "FirstUseSettings.lblWinratePerspective")); // ("目差在胜率图上显示为:");
+    lblWinratePerspective.setBounds(10, 126, 337, 22);
+    getContentPane().add(lblWinratePerspective);
 
-    JFontRadioButton rdoScoreOnWinratePaneWithKomi =
+    JFontRadioButton rdoAlwaysBlack =
         new JFontRadioButton(
-            Lizzie.resourceBundle.getString(
-                "FirstUseSettings.rdoScoreOnWinratePaneWithKomi")); // ("盘面目数差");
-    rdoScoreOnWinratePaneWithKomi.setBounds(
+            Lizzie.resourceBundle.getString("FirstUseSettings.rdoAlwaysBlack")); // ("盘面目数差");
+    rdoAlwaysBlack.setBounds(
         Lizzie.config.isFrameFontSmall() ? 240 : (Lizzie.config.isFrameFontMiddle() ? 310 : 380),
         128,
         Lizzie.config.isFrameFontSmall() ? 114 : (Lizzie.config.isFrameFontMiddle() ? 114 : 140),
         23);
-    getContentPane().add(rdoScoreOnWinratePaneWithKomi);
+    getContentPane().add(rdoAlwaysBlack);
 
-    JFontRadioButton rdoScoreOnWinratePaneWithOutKomi =
+    JFontRadioButton rdoAlternately =
         new JFontRadioButton(
-            Lizzie.resourceBundle.getString(
-                "FirstUseSettings.rdoScoreOnWinratePaneWithOutKomi")); // ("计算贴目后目数差");
-    rdoScoreOnWinratePaneWithOutKomi.setBounds(
+            Lizzie.resourceBundle.getString("FirstUseSettings.rdoAlternately")); // ("计算贴目后目数差");
+    rdoAlternately.setBounds(
         Lizzie.config.isFrameFontSmall() ? 350 : (Lizzie.config.isFrameFontMiddle() ? 420 : 520),
         128,
         422,
         23);
-    getContentPane().add(rdoScoreOnWinratePaneWithOutKomi);
+    getContentPane().add(rdoAlternately);
 
     ButtonGroup group4 = new ButtonGroup();
-    group4.add(rdoScoreOnWinratePaneWithKomi);
-    group4.add(rdoScoreOnWinratePaneWithOutKomi);
+    group4.add(rdoAlwaysBlack);
+    group4.add(rdoAlternately);
 
     JFontLabel lblLizzieCache =
         new JFontLabel(
@@ -392,7 +393,7 @@ public class FirstUseSettings extends JDialog {
     getContentPane().add(txtMaxAnalyzeTime);
 
     chkLimitPlayouts =
-        new JFontCheckBox(Lizzie.resourceBundle.getString("FirstUseSettings.chkLimitPlayouts"));
+        new JFontCheckBox(Lizzie.resourceBundle.getString("FirstUseSettings.chkLimitVisits"));
     getContentPane().add(chkLimitPlayouts);
     if (Lizzie.config.isChinese)
       chkLimitPlayouts.setBounds(
@@ -456,8 +457,7 @@ public class FirstUseSettings extends JDialog {
     lblSuggestionInfo.setBounds(10, 206, 285, 22);
     getContentPane().add(lblSuggestionInfo);
 
-    JFontCheckBox chkWinrate =
-        new JFontCheckBox(Lizzie.resourceBundle.getString("FirstUseSettings.chkWinrate"));
+    chkWinrate = new JFontCheckBox(Lizzie.resourceBundle.getString("FirstUseSettings.chkWinrate"));
     chkWinrate.setBounds(
         Lizzie.config.isFrameFontSmall() ? 240 : (Lizzie.config.isFrameFontMiddle() ? 310 : 380),
         208,
@@ -465,8 +465,7 @@ public class FirstUseSettings extends JDialog {
         23);
     getContentPane().add(chkWinrate);
 
-    JFontCheckBox chkPlayouts =
-        new JFontCheckBox(Lizzie.resourceBundle.getString("FirstUseSettings.chkPlayouts"));
+    chkPlayouts = new JFontCheckBox(Lizzie.resourceBundle.getString("FirstUseSettings.chkVisits"));
     chkPlayouts.setBounds(
         Lizzie.config.isFrameFontSmall() ? 350 : (Lizzie.config.isFrameFontMiddle() ? 420 : 520),
         208,
@@ -474,7 +473,7 @@ public class FirstUseSettings extends JDialog {
         23);
     getContentPane().add(chkPlayouts);
 
-    JFontCheckBox chkScoreLead =
+    chkScoreLead =
         new JFontCheckBox(Lizzie.resourceBundle.getString("FirstUseSettings.chkScoreLead"));
     chkScoreLead.setBounds(
         Lizzie.config.isFrameFontSmall() ? 460 : (Lizzie.config.isFrameFontMiddle() ? 530 : 660),
@@ -501,14 +500,12 @@ public class FirstUseSettings extends JDialog {
     btnCustomOrder.addActionListener(
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
-            Lizzie.frame.openSuggestionInfoCustom(thisDialog);
+            LizzieFrame.openSuggestionInfoCustom(thisDialog);
           }
         });
     getContentPane().add(btnCustomOrder);
 
-    chkWinrate.setSelected(Lizzie.config.showWinrateInSuggestion);
-    chkPlayouts.setSelected(Lizzie.config.showPlayoutsInSuggestion);
-    chkScoreLead.setSelected(Lizzie.config.showScoremeanInSuggestion);
+    setChkSuggestionInfo();
 
     JFontButton defaultSettings =
         new JFontButton(
@@ -529,7 +526,7 @@ public class FirstUseSettings extends JDialog {
             rdoMouseOverSubboardNoRefresh.setSelected(true);
             rdoMouseOverSuggestionNoRefresh.setSelected(true);
             rdoScoreOnBoardWithOutKomi.setSelected(true);
-            rdoScoreOnWinratePaneWithOutKomi.setSelected(true);
+            rdoAlternately.setSelected(true);
             if (OS.isWindows()) rdoSysLooks.setSelected(true);
             else rdoJavaLooks.setSelected(true);
             txtLimitSuggestion.setText("10");
@@ -554,7 +551,8 @@ public class FirstUseSettings extends JDialog {
     btnApply.addActionListener(
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
-            if (!chkPlayouts.isSelected()
+            if (firstTime
+                && !chkPlayouts.isSelected()
                 && !chkScoreLead.isSelected()
                 && !chkWinrate.isSelected()) {
               Utils.showMsg(
@@ -589,8 +587,7 @@ public class FirstUseSettings extends JDialog {
                   Lizzie.resourceBundle.getString("FirstUseSettings.confirmHint")); // ("有未选择的选项");
               return;
             }
-            if (!rdoScoreOnWinratePaneWithKomi.isSelected()
-                && !rdoScoreOnWinratePaneWithOutKomi.isSelected()) {
+            if (!rdoAlwaysBlack.isSelected() && !rdoAlternately.isSelected()) {
               Utils.showMsg(
                   Lizzie.resourceBundle.getString("FirstUseSettings.confirmHint")); // ("有未选择的选项");
               return;
@@ -610,14 +607,13 @@ public class FirstUseSettings extends JDialog {
                 "show-playouts-in-suggestion", Lizzie.config.showPlayoutsInSuggestion);
             Lizzie.config.uiConfig.put(
                 "show-scoremean-in-suggestion", Lizzie.config.showScoremeanInSuggestion);
-            if (Lizzie.frame != null && Lizzie.frame.menu != null) {
-              Lizzie.frame.menu.chkShowWinrate.setSelected(Lizzie.config.showWinrateInSuggestion);
-              Lizzie.frame.menu.chkShowPlayouts.setSelected(Lizzie.config.showPlayoutsInSuggestion);
-              Lizzie.frame.menu.chkShowScore.setSelected(Lizzie.config.showScoremeanInSuggestion);
+            if (Lizzie.frame != null && LizzieFrame.menu != null) {
+              LizzieFrame.menu.chkShowWinrate.setSelected(Lizzie.config.showWinrateInSuggestion);
+              LizzieFrame.menu.chkShowPlayouts.setSelected(Lizzie.config.showPlayoutsInSuggestion);
+              LizzieFrame.menu.chkShowScore.setSelected(Lizzie.config.showScoremeanInSuggestion);
             }
             int limitVariation = 0;
             int limitSuggestion = 0;
-            int limitPvVisits = 0;
             int maxAnalyzeTime = (int) (Lizzie.config.maxAnalyzeTimeMillis / 1000);
             long maxAnalyzePlayouts = Lizzie.config.limitPlayouts;
             try {
@@ -685,11 +681,9 @@ public class FirstUseSettings extends JDialog {
             Lizzie.config.uiConfig.put(
                 "show-katago-boardscoremean", Lizzie.config.showKataGoBoardScoreMean);
 
-            if (rdoScoreOnWinratePaneWithKomi.isSelected())
-              Lizzie.config.scoreMeanWinrateGraphBoard = true;
-            else Lizzie.config.scoreMeanWinrateGraphBoard = false;
-            Lizzie.config.uiConfig.put(
-                "scoremean-winrategraph-board", Lizzie.config.scoreMeanWinrateGraphBoard);
+            if (rdoAlwaysBlack.isSelected()) Lizzie.config.winrateAlwaysBlack = true;
+            else Lizzie.config.winrateAlwaysBlack = false;
+            Lizzie.config.uiConfig.put("win-rate-always-black", Lizzie.config.winrateAlwaysBlack);
 
             Lizzie.config.limitMaxSuggestion = limitSuggestion;
             Lizzie.config.leelazConfig.put(
@@ -700,7 +694,7 @@ public class FirstUseSettings extends JDialog {
             Lizzie.config.uiConfig.put("first-time-load", false);
             Lizzie.config.needReopenFirstUseSettings = false;
             setVisible(false);
-            if (Lizzie.frame != null) Lizzie.frame.menu.refreshLimitStatus(true);
+            if (Lizzie.frame != null) LizzieFrame.menu.refreshLimitStatus(true);
             try {
               Lizzie.config.save();
             } catch (IOException e1) {
@@ -713,6 +707,7 @@ public class FirstUseSettings extends JDialog {
               Utils.showMsg(Lizzie.resourceBundle.getString("Lizzie.hint.restartForPartChanges"));
             }
             if (firstTime) Lizzie.resetLookAndFeel();
+            else Lizzie.frame.refresh();
           }
         });
     btnApply.setBounds(
@@ -731,16 +726,16 @@ public class FirstUseSettings extends JDialog {
       else rdoMouseOverSubboardRefresh.setSelected(true);
       if (Lizzie.config.showKataGoBoardScoreMean) rdoScoreOnBoardWithKomi.setSelected(true);
       else rdoScoreOnBoardWithOutKomi.setSelected(true);
-      if (Lizzie.config.scoreMeanWinrateGraphBoard) rdoScoreOnWinratePaneWithKomi.setSelected(true);
-      else rdoScoreOnWinratePaneWithOutKomi.setSelected(true);
+      if (Lizzie.config.winrateAlwaysBlack) rdoAlwaysBlack.setSelected(true);
+      else rdoAlternately.setSelected(true);
       if (Lizzie.config.useJavaLooks) rdoJavaLooks.setSelected(true);
       else rdoSysLooks.setSelected(true);
       if (Lizzie.config.enableLizzieCache) rdoLizzieCacheEnable.setSelected(true);
       else rdoLizzieCacheDisable.setSelected(true);
-      txtLimitVariation.setText(Lizzie.config.limitBranchLength + "");
-      txtLimitSuggestion.setText(Lizzie.config.limitMaxSuggestion + "");
+      txtLimitVariation.setText(String.valueOf(Lizzie.config.limitBranchLength));
+      txtLimitSuggestion.setText(String.valueOf(Lizzie.config.limitMaxSuggestion));
       txtMaxAnalyzeTime.setText(String.valueOf(Lizzie.config.maxAnalyzeTimeMillis / 1000));
-      txtMaxAnalyzePlayouts.setText(Lizzie.config.limitPlayouts + "");
+      txtMaxAnalyzePlayouts.setText(String.valueOf(Lizzie.config.limitPlayouts));
       chkLimitPlayouts.setSelected(Lizzie.config.limitPlayout);
       chkLimitTime.setSelected(Lizzie.config.limitTime);
       txtMaxAnalyzeTime.setEnabled(Lizzie.config.limitTime);
@@ -803,5 +798,12 @@ public class FirstUseSettings extends JDialog {
             }
           }
         });
+  }
+
+  public void setChkSuggestionInfo() {
+    // TODO Auto-generated method stub
+    chkWinrate.setSelected(Lizzie.config.showWinrateInSuggestion);
+    chkPlayouts.setSelected(Lizzie.config.showPlayoutsInSuggestion);
+    chkScoreLead.setSelected(Lizzie.config.showScoremeanInSuggestion);
   }
 }

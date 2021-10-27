@@ -92,12 +92,10 @@ public class SetEstimateParam extends JDialog {
             RemoteEngineData remoteEngineData = Utils.getEstimateEngineRemoteEngineData();
             remoteEngineData.useJavaSSH = chkRemoteEngine.isSelected();
             Utils.saveEstimateEngineRemoteEngineData(remoteEngineData);
-            boolean oriUseZen = Lizzie.config.useZenEstimate;
             Lizzie.config.useZenEstimate = rdoZen.isSelected();
             Lizzie.config.zenEstimateCommand = textAreaZen.getText();
             Lizzie.config.uiConfig.put("use-zen-estimate", Lizzie.config.useZenEstimate);
             Lizzie.config.uiConfig.put("use-estimate-command", Lizzie.config.zenEstimateCommand);
-            String oriCommand = Lizzie.config.estimateCommand;
             Lizzie.config.estimateThreshold =
                 Utils.parseTextToDouble(txtThreshold, Lizzie.config.estimateThreshold);
             Lizzie.config.estimateCommand = textAreaCommand.getText();
@@ -113,7 +111,7 @@ public class SetEstimateParam extends JDialog {
     // setSize(507, 379);
     Lizzie.setFrameSize(this, 507, 389);
     textAreaCommand.setText(Lizzie.config.estimateCommand);
-    txtThreshold.setText(Lizzie.config.estimateThreshold + "");
+    txtThreshold.setText(String.valueOf(Lizzie.config.estimateThreshold));
     JTextArea lblHint = new JTextArea();
     lblHint.setBackground(this.getBackground());
     lblHint.setText(resourceBundle.getString("SetEstimateParam.lblHint")); // $NON-NLS-1$
@@ -144,7 +142,7 @@ public class SetEstimateParam extends JDialog {
 
     JLabel lblZenEngineCommand =
         new JLabel(resourceBundle.getString("SetEstimateParam.lblZenEngineCommand")); // $NON-NLS-1$
-    lblZenEngineCommand.setBounds(10, 59, 178, 15);
+    lblZenEngineCommand.setBounds(10, 59, 878, 15);
     getContentPane().add(lblZenEngineCommand);
 
     textAreaZen = new JFontTextArea();

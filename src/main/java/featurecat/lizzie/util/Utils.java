@@ -2,21 +2,25 @@ package featurecat.lizzie.util;
 
 import static java.lang.Math.round;
 
+import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
 import featurecat.lizzie.gui.EngineData;
+import featurecat.lizzie.gui.HtmlMessage;
+import featurecat.lizzie.gui.LizzieFrame;
 import featurecat.lizzie.gui.Message;
 import featurecat.lizzie.gui.RemoteEngineData;
 import featurecat.lizzie.rules.BoardHistoryNode;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.Window;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,9 +49,30 @@ public class Utils {
   public static String iv = "s6st73f41adc4c5d";
   public static String aesKey2 = "iyekeeay2ueeaesk";
   public static String iv2 = "s6st73f49adc4c5d";
-  public static String pwd = java.io.File.separator;
   private static int msemaphoretryroom = 1;
   private static boolean alertedNoByoyomiSoundFile = false;
+
+  public static Color getNoneAlphaColor(Color alphaColor) {
+    return new Color(alphaColor.getRed(), alphaColor.getGreen(), alphaColor.getBlue());
+  }
+
+  public static String getIfRound(double num) {
+    if (num % 1.0 == 0) return String.valueOf((int) num);
+    return String.valueOf(num);
+  }
+
+  public static void showHtmlMessage(String title, String content) {
+    HtmlMessage htmlMessage =
+        new HtmlMessage(title, content, Lizzie.frame != null ? Lizzie.frame : null);
+    htmlMessage.setVisible(true);
+  }
+
+  public static void showHtmlMessageModal(String title, String content) {
+    HtmlMessage htmlMessage =
+        new HtmlMessage(title, content, Lizzie.frame != null ? Lizzie.frame : null);
+    htmlMessage.setModal(true);
+    htmlMessage.setVisible(true);
+  }
 
   public static void addFiller(JComponent component, int width, int height) {
     Dimension FILLER_DIMENSION = new Dimension(width, height);
@@ -112,12 +137,12 @@ public class Utils {
   }
 
   public static int zoomIn(int pos) {
-    if (Lizzie.config.isScaled) return (int) Math.round(pos / Lizzie.javaScaleFactor);
+    if (Config.isScaled) return (int) Math.round(pos / Lizzie.javaScaleFactor);
     else return pos;
   }
 
   public static int zoomOut(int pos) {
-    if (Lizzie.config.isScaled) return (int) Math.round(pos * Lizzie.javaScaleFactor);
+    if (Config.isScaled) return (int) Math.round(pos * Lizzie.javaScaleFactor);
     else return pos;
   }
 
@@ -429,6 +454,11 @@ public class Utils {
     //  msg.setVisible(true);
   }
 
+  public static void showMsg(String message, Window owner) {
+    Message msg = new Message();
+    msg.setMessage(message, owner);
+  }
+
   public static void showMsgNoModal(String message) {
     Message msg = new Message();
     msg.setMessageNoModal(message);
@@ -443,13 +473,13 @@ public class Utils {
 
   /**
    * @return a shorter, rounded string version of playouts. e.g. 345 -> 345, 1265 -> 1.3k, 44556 ->
-   *     45k, 133523 -> 134k, 1234567 -> 1.2m
+   *     45k, 133523 -> 134k, 1234567 -> 1235k, 12345678 -> 12.3m
    */
   public static String getPlayoutsString(int playouts) {
-    if (playouts >= 1_000_000) {
+    if (playouts >= 10_000_000) {
       double playoutsDouble = (double) playouts / 100_000; // 1234567 -> 12.34567
       return round(playoutsDouble) / 10.0 + "m";
-    } else if (playouts >= 10_000) {
+    } else if (playouts >= 9950) {
       double playoutsDouble = (double) playouts / 1_000; // 13265 -> 13.265
       return round(playoutsDouble) + "k";
     } else if (playouts >= 1_000) {
@@ -500,57 +530,6 @@ public class Utils {
     }
   }
 
-  //  public static double lastWinrateDiff(BoardHistoryNode node) {
-  //
-  //    // Last winrate
-  //    Optional<BoardData> lastNode = node.previous().flatMap(n -> Optional.of(n.getData()));
-  //    boolean validLastWinrate = lastNode.map(d -> d.getPlayouts() > 0).orElse(false);
-  //    double lastWR = validLastWinrate ? lastNode.get().winrate : 50;
-  //
-  //    // Current winrate
-  //    BoardData data = node.getData();
-  //    boolean validWinrate = false;
-  //    double curWR = 50;
-  //    if (data == Lizzie.board.getHistory().getData()) {
-  //      Leelaz.WinrateStats stats = Lizzie.leelaz.getWinrateStats();
-  //      curWR = stats.maxWinrate;
-  //      validWinrate = (stats.totalPlayouts > 0);
-  //      if (Lizzie.frame.isPlayingAgainstLeelaz
-  //          && Lizzie.frame.playerIsBlack == !Lizzie.board.getHistory().getData().blackToPlay) {
-  //        validWinrate = false;
-  //      }
-  //    } else {
-  //      validWinrate = (data.getPlayouts() > 0);
-  //      curWR = validWinrate ? data.winrate : 100 - lastWR;
-  //    }
-  //
-  //    // Last move difference winrate
-  //    if (validLastWinrate && validWinrate) {
-  //      return 100 - lastWR - curWR;
-  //    } else {
-  //      return 0;
-  //    }
-  //  }
-
-  //  public static Color getBlunderNodeColor(BoardHistoryNode node) {
-  //    if (Lizzie.config.nodeColorMode == 1 && node.getData().blackToPlay
-  //        || Lizzie.config.nodeColorMode == 2 && !node.getData().blackToPlay) {
-  //      return Color.WHITE;
-  //    }
-  //    double diffWinrate = lastWinrateDiff(node);
-  //    Optional<Double> st =
-  //        diffWinrate >= 0
-  //            ? Lizzie.config.blunderWinrateThresholds.flatMap(
-  //                l -> l.stream().filter(t -> (t > 0 && t <= diffWinrate)).reduce((f, s) -> s))
-  //            : Lizzie.config.blunderWinrateThresholds.flatMap(
-  //                l -> l.stream().filter(t -> (t < 0 && t >= diffWinrate)).reduce((f, s) -> f));
-  //    if (st.isPresent()) {
-  //      return Lizzie.config.blunderNodeColors.map(m -> m.get(st.get())).get();
-  //    } else {
-  //      return Color.WHITE;
-  //    }
-  //  }
-
   public static Integer txtFieldValue(JTextField txt) {
     if (txt.getText().trim().isEmpty()
         || txt.getText().trim().length() >= String.valueOf(Integer.MAX_VALUE).length()) {
@@ -591,7 +570,7 @@ public class Utils {
   }
 
   public static void playVoiceFile() {
-    if (Lizzie.config.notPlaySoundInSync && (Lizzie.frame.urlSgf || Lizzie.frame.syncBoard)) return;
+    if (Lizzie.config.notPlaySoundInSync && (LizzieFrame.urlSgf || Lizzie.frame.syncBoard)) return;
     Runnable runnable =
         new Runnable() {
           public void run() {
@@ -604,15 +583,21 @@ public class Utils {
               if (node.previous().isPresent()) {
                 if (node.getData().blackCaptures > node.previous().get().getData().blackCaptures) {
                   if (node.getData().blackCaptures - node.previous().get().getData().blackCaptures
-                      >= 3) playVoice(pwd + "sound" + pwd + "deadStoneMore.wav", false);
-                  else playVoice(pwd + "sound" + pwd + "deadStone.wav", false);
+                      >= 3)
+                    playVoice(
+                        File.separator + "sound" + File.separator + "deadStoneMore.wav", false);
+                  else
+                    playVoice(File.separator + "sound" + File.separator + "deadStone.wav", false);
                 } else {
                   if (node.getData().whiteCaptures
                       > node.previous().get().getData().whiteCaptures) {
                     if (node.getData().whiteCaptures - node.previous().get().getData().whiteCaptures
-                        >= 3) playVoice(pwd + "sound" + pwd + "deadStoneMore.wav", false);
-                    else playVoice(pwd + "sound" + pwd + "deadStone.wav", false);
-                  } else playVoice(pwd + "sound" + pwd + "Stone.wav", false);
+                        >= 3)
+                      playVoice(
+                          File.separator + "sound" + File.separator + "deadStoneMore.wav", false);
+                    else
+                      playVoice(File.separator + "sound" + File.separator + "deadStone.wav", false);
+                  } else playVoice(File.separator + "sound" + File.separator + "Stone.wav", false);
                 }
               } else {
                 playVoice("\\sound\\Stone.wav", false);
@@ -630,7 +615,7 @@ public class Utils {
 
   public static void playByoyomi(int seconds) {
     try {
-      playVoice(pwd + "sound" + pwd + seconds + ".wav", true);
+      playVoice(File.separator + "sound" + File.separator + seconds + ".wav", true);
     } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -659,8 +644,8 @@ public class Utils {
             showMsg(Lizzie.resourceBundle.getString("Utils.noSoundFile") + wav + "\"");
           }
         } else {
-          showMsg(Lizzie.resourceBundle.getString("Utils.noSoundFile") + wav + "\"");
           Lizzie.config.playSound = false;
+          showMsg(Lizzie.resourceBundle.getString("Utils.noSoundFile") + wav + "\"");
           Lizzie.config.uiConfig.put("play-sound", Lizzie.config.playSound);
         }
         return;
@@ -693,21 +678,6 @@ public class Utils {
     }
   }
 
-  private static String getCurrentDirPath() {
-    URL url = Utils.class.getProtectionDomain().getCodeSource().getLocation();
-    String path = url.getPath();
-    if (path.startsWith("file:")) {
-      path = path.replace("file:", "");
-    }
-    if (path.contains(".jar!/")) {
-      path = path.substring(0, path.indexOf(".jar!/") + 4);
-    }
-
-    File file = new File(path);
-    path = file.getParentFile().getAbsolutePath();
-    return path;
-  }
-
   private static Path getDistFile(String path, String newFolderName) throws IOException {
     String currentRealPath = "";
     File file = new File("");
@@ -734,20 +704,6 @@ public class Utils {
     in.close();
   }
 
-  public static void addNewThemeAs(String themeName) {
-    // TODO Auto-generated method stub
-    try {
-      copy("/assets/newtheme/black.png", "theme" + File.separator + themeName);
-      copy("/assets/newtheme/white.png", "theme" + File.separator + themeName);
-      copy("/assets/newtheme/board.png", "theme" + File.separator + themeName);
-      copy("/assets/newtheme/background.jpg", "theme" + File.separator + themeName);
-      copy("/assets/newtheme/theme.txt", "theme" + File.separator + themeName);
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-
   public static boolean deleteDir(File dir) {
     if (dir.isDirectory()) {
       String[] children = dir.list();
@@ -762,6 +718,42 @@ public class Utils {
       return true;
     } else {
       return false;
+    }
+  }
+
+  public static void addNewThemeAs(String themeName) {
+    // TODO Auto-generated method stub
+    try {
+      copy("/assets/newtheme/black.png", "theme" + File.separator + themeName);
+      copy("/assets/newtheme/white.png", "theme" + File.separator + themeName);
+      copy("/assets/newtheme/board.png", "theme" + File.separator + themeName);
+      copy("/assets/newtheme/background.jpg", "theme" + File.separator + themeName);
+      copy("/assets/newtheme/theme.txt", "theme" + File.separator + themeName);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  public static void copyReadBoardJava(String javaReadBoardName) {
+    // TODO Auto-generated method stub
+    try {
+      copy("/assets/readboard_java/" + javaReadBoardName, "readboard_java");
+      copy("/assets/readboard_java/help.docx", "readboard_java");
+      copy("/assets/readboard_java/help_en.docx", "readboard_java");
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  public static void copyFoxReq() {
+    // TODO Auto-generated method stub
+    try {
+      copy("/assets/foxReq/foxRequestQ.jar", "foxReq");
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
   }
 }

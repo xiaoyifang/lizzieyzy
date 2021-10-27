@@ -3,6 +3,7 @@ package featurecat.lizzie.theme;
 import static java.io.File.separator;
 
 import featurecat.lizzie.Lizzie;
+import featurecat.lizzie.util.Utils;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -37,12 +38,15 @@ public class Theme {
   private JSONObject uiConfig = null;
   private Optional<List<Double>> blunderWinrateThresholds = Optional.empty();
 
-  public Theme(JSONObject uiConfig) {
+  public Theme() {}
+
+  public boolean getTheme(JSONObject uiConfig) {
     this.uiConfig = uiConfig;
     String themeName = uiConfig.optString("theme");
-    this.path = this.pathPrefix + (themeName.isEmpty() ? "" : themeName + separator);
+    this.path = Theme.pathPrefix + (themeName.isEmpty() ? "" : themeName + separator);
     File file = new File(this.path + this.configFile);
-    if (file.canRead()) {
+    boolean canReadFile = file.canRead();
+    if (canReadFile) {
       FileInputStream fp;
       try {
         fp = new FileInputStream(file);
@@ -52,6 +56,7 @@ public class Theme {
       } catch (JSONException e) {
       }
     }
+    return canReadFile;
   }
 
   private String getImagePathByKey(String key) {
@@ -64,7 +69,7 @@ public class Theme {
 
   public int stoneIndicatorType() {
     String key = "stone-indicator-type";
-    return config.optInt(key, uiConfig.optInt(key, 0));
+    return config.optInt(key, uiConfig.optInt(key, 1));
   }
 
   public String blackStonePath() {
@@ -80,11 +85,11 @@ public class Theme {
   }
 
   public Color pureBoardColor() {
-    return getColorByKey("pure-board-color", new Color(217, 152, 77));
+    return Utils.getNoneAlphaColor(getColorByKey("pure-board-color", new Color(217, 152, 77)));
   }
 
   public Color pureBackgroundColor() {
-    return getColorByKey("pure-background-color", Color.GRAY);
+    return Utils.getNoneAlphaColor(getColorByKey("pure-background-color", Color.GRAY));
   }
 
   public Color scoreMeanLineColor() {
@@ -93,7 +98,7 @@ public class Theme {
 
   public Theme(String themeName) {
     this.uiConfig = Lizzie.config.uiConfig;
-    this.path = this.pathPrefix + (themeName.isEmpty() ? "" : themeName + separator);
+    this.path = Theme.pathPrefix + (themeName.isEmpty() ? "" : themeName + separator);
     File file = new File(this.path + this.configFile);
     if (file.canRead()) {
       FileInputStream fp;
@@ -198,6 +203,18 @@ public class Theme {
     else return config.optBoolean(key, false);
   }
 
+  public boolean useScoreDiffInVariationTree(boolean onLoad) {
+    String key = "use-scorediff-in-variation-tree";
+    if (onLoad) return config.optBoolean(key, uiConfig.optBoolean(key, true));
+    else return config.optBoolean(key, true);
+  }
+
+  public double scoreDiffInVariationTreeFactor(boolean onLoad) {
+    String key = "scorediff-in-variation-tree-factor";
+    if (onLoad) return config.optDouble(key, uiConfig.optDouble(key, 0.5));
+    else return config.optDouble(key, 0.5);
+  }
+
   public boolean showStoneShadow(boolean onLoad) {
     String key = "show-stone-shadow";
     if (onLoad) return config.optBoolean(key, uiConfig.optBoolean(key, true));
@@ -248,7 +265,7 @@ public class Theme {
 
   /** The color of the node with the comment */
   public Color commentNodeColor() {
-    return getColorByKey("comment-node-color", Color.BLUE.brighter());
+    return getColorByKey("comment-node-color", Color.BLUE);
   }
 
   /** The color of the winrate line */
@@ -336,7 +353,7 @@ public class Theme {
       image = ImageIO.read(new File(p));
     } catch (IOException e) {
       try {
-        p = this.pathPrefix + uiConfig.optString(key, defaultValue);
+        p = Theme.pathPrefix + uiConfig.optString(key, defaultValue);
         image = ImageIO.read(new File(p));
       } catch (IOException e1) {
         try {
@@ -384,6 +401,16 @@ public class Theme {
       if (c.getAlpha() != 255) {
         a.put(c.getAlpha());
       }
+    }
+    return a;
+  }
+
+  public static JSONArray color2ArrayNoAlpha(Color c) {
+    JSONArray a = new JSONArray("[]");
+    if (c != null) {
+      a.put(c.getRed());
+      a.put(c.getGreen());
+      a.put(c.getBlue());
     }
     return a;
   }

@@ -2,6 +2,7 @@ package featurecat.lizzie.gui;
 
 import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
+import featurecat.lizzie.rules.Board;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -24,7 +25,6 @@ import javax.swing.SwingConstants;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
-import javax.swing.text.DocumentFilter.FilterBypass;
 import javax.swing.text.InternationalFormatter;
 
 public class SetBoardSize extends JDialog {
@@ -82,7 +82,7 @@ public class SetBoardSize extends JDialog {
 
               private DocumentFilter filter = new DigitOnlyFilter();
             });
-    width.setFont(new Font("", Font.PLAIN, Config.frameFontSize));
+    width.setFont(new Font(Config.sysDefaultFontName, Font.PLAIN, Config.frameFontSize));
     buttonPane.add(width);
     width.setColumns(3);
 
@@ -100,7 +100,7 @@ public class SetBoardSize extends JDialog {
               private DocumentFilter filter = new DigitOnlyFilter();
             });
 
-    height.setFont(new Font("", Font.PLAIN, Config.frameFontSize));
+    height.setFont(new Font(Config.sysDefaultFontName, Font.PLAIN, Config.frameFontSize));
     buttonPane.add(height);
     height.setColumns(3);
 
@@ -205,19 +205,21 @@ public class SetBoardSize extends JDialog {
     rdo13.setFocusable(false);
     rdo9.setFocusable(false);
     rdoOther.setFocusable(false);
-    if (Lizzie.board.boardHeight == 19 && Lizzie.board.boardWidth == 19) rdo19.setSelected(true);
-    else if (Lizzie.board.boardHeight == 15 && Lizzie.board.boardWidth == 15)
-      rdo15.setSelected(true);
-    else if (Lizzie.board.boardHeight == 13 && Lizzie.board.boardWidth == 13)
-      rdo13.setSelected(true);
-    else if (Lizzie.board.boardHeight == 9 && Lizzie.board.boardWidth == 9) rdo9.setSelected(true);
-    else rdoOther.setSelected(true);
+    if (Board.boardHeight == 19 && Board.boardWidth == 19) rdo19.setSelected(true);
+    else if (Board.boardHeight == 15 && Board.boardWidth == 15) rdo15.setSelected(true);
+    else if (Board.boardHeight == 13 && Board.boardWidth == 13) rdo13.setSelected(true);
+    else if (Board.boardHeight == 9 && Board.boardWidth == 9) rdo9.setSelected(true);
+    else {
+      rdoOther.setSelected(true);
+      Lizzie.config.otherSizeWidth = Board.boardWidth;
+      Lizzie.config.otherSizeHeight = Board.boardHeight;
+    }
     if (!rdoOther.isSelected()) {
       width.setEnabled(false);
       height.setEnabled(false);
     }
-    width.setText(Lizzie.board.boardWidth + "");
-    height.setText(Lizzie.board.boardHeight + "");
+    width.setText(String.valueOf(Lizzie.config.otherSizeWidth));
+    height.setText(String.valueOf(Lizzie.config.otherSizeHeight));
 
     ButtonGroup group = new ButtonGroup();
     group.add(rdo19);
@@ -255,7 +257,10 @@ public class SetBoardSize extends JDialog {
     else if (rdo15.isSelected()) Lizzie.board.reopen(15, 15);
     else if (rdo13.isSelected()) Lizzie.board.reopen(13, 13);
     else if (rdo9.isSelected()) Lizzie.board.reopen(9, 9);
-    else Lizzie.board.reopen(widthNumber, heightNumber);
+    else {
+      Lizzie.board.reopen(widthNumber, heightNumber);
+      Lizzie.config.saveOtherBoardSize(widthNumber, heightNumber);
+    }
   }
 
   private Integer txtFieldValue(JTextField txt) {

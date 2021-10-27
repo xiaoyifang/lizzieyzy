@@ -1,13 +1,13 @@
 package featurecat.lizzie.gui;
 
-import static java.awt.RenderingHints.KEY_ANTIALIASING;
-import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
-import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
-
+import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
+import featurecat.lizzie.analysis.EngineManager;
 import featurecat.lizzie.analysis.Leelaz;
 import featurecat.lizzie.analysis.MoveData;
+import featurecat.lizzie.rules.Board;
 import featurecat.lizzie.rules.BoardHistoryNode;
+import featurecat.lizzie.util.Utils;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,7 +23,6 @@ import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,7 +65,7 @@ public class AnalysisFrame extends JFrame {
   public AnalysisFrame(int engine) {
     index = engine;
     dataModel = getTableModel();
-    if (Lizzie.frame.extraMode == 2) {
+    if (Lizzie.config.isDoubleEngineMode()) {
       if (index == 1) oriTitle = resourceBundle.getString("AnalysisFrame.titleMain");
       else if (index == 2) oriTitle = resourceBundle.getString("AnalysisFrame.titleSub");
     } else oriTitle = resourceBundle.getString("AnalysisFrame.title");
@@ -96,14 +95,13 @@ public class AnalysisFrame extends JFrame {
     }
     table = new JTable(dataModel);
 
-    winrateFont =
-        new Font("Microsoft YaHei", Font.PLAIN, Math.max(Lizzie.config.frameFontSize, 14));
-    headFont = new Font("Microsoft YaHei", Font.PLAIN, Math.max(Lizzie.config.frameFontSize, 13));
+    winrateFont = new Font("Microsoft YaHei", Font.BOLD, Math.max(Config.frameFontSize, 14));
+    headFont = new Font("Microsoft YaHei", Font.PLAIN, Math.max(Config.frameFontSize, 13));
 
     table.getTableHeader().setFont(headFont);
     table.getTableHeader().setReorderingAllowed(false);
     table.setFont(winrateFont);
-    table.setRowHeight(Lizzie.config.menuHeight);
+    table.setRowHeight(Config.menuHeight);
     TableCellRenderer tcr = new ColorTableCellRenderer();
     table.setDefaultRenderer(Object.class, tcr);
 
@@ -283,7 +281,7 @@ public class AnalysisFrame extends JFrame {
           table.getColumnModel().getColumn(8).setPreferredWidth(pos.getInt(12));
           setBounds(pos.getInt(0), pos.getInt(1), pos.getInt(2), pos.getInt(3));
         } else {
-          setBounds(-9, 480, 650, 320);
+          setBounds(-9, 550, 650, 320);
         }
       } else if (Lizzie.config.persistedUi.optJSONArray("suggestions-list-position-7") != null
           && Lizzie.config.persistedUi.optJSONArray("suggestions-list-position-7").length() == 11) {
@@ -312,7 +310,7 @@ public class AnalysisFrame extends JFrame {
     }
     setVisible(false);
     setVisible(true);
-    if (Lizzie.frame.extraMode == 2) {
+    if (Lizzie.config.isDoubleEngineMode()) {
       if (index == 2) {
         if (Lizzie.frame.analysisFrame != null)
           this.setLocation(
@@ -337,11 +335,11 @@ public class AnalysisFrame extends JFrame {
             Point p = e.getPoint();
             int row = table.rowAtPoint(p);
             if (row < 0) {
-              if (Lizzie.frame.suggestionclick != Lizzie.frame.outOfBoundCoordinate) {
-                Lizzie.frame.boardRenderer.startNormalBoard();
-                Lizzie.frame.boardRenderer.clearBranch();
-                Lizzie.frame.suggestionclick = Lizzie.frame.outOfBoundCoordinate;
-                Lizzie.frame.mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
+              if (Lizzie.frame.suggestionclick != LizzieFrame.outOfBoundCoordinate) {
+                LizzieFrame.boardRenderer.startNormalBoard();
+                LizzieFrame.boardRenderer.clearBranch();
+                Lizzie.frame.suggestionclick = LizzieFrame.outOfBoundCoordinate;
+                Lizzie.frame.mouseOverCoordinate = LizzieFrame.outOfBoundCoordinate;
                 selectedorder = -1;
                 currentRow = -1;
                 clickOrder = -1;
@@ -351,16 +349,15 @@ public class AnalysisFrame extends JFrame {
             }
             if (table.getValueAt(row, 1).toString().startsWith("pass")) return;
             if (selectedorder >= 0
-                && Lizzie.board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[0]
+                && Board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[0]
                     == Lizzie.frame.suggestionclick[0]
-                && Lizzie.board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[1]
+                && Board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[1]
                     == Lizzie.frame.suggestionclick[1]) {
             } else {
-              Lizzie.frame.boardRenderer.startNormalBoard();
+              LizzieFrame.boardRenderer.startNormalBoard();
               selectedorder = row;
               currentRow = row;
-              int[] coords =
-                  Lizzie.board.convertNameToCoordinates(table.getValueAt(row, 1).toString());
+              int[] coords = Board.convertNameToCoordinates(table.getValueAt(row, 1).toString());
               Lizzie.frame.mouseOverCoordinate = coords;
               Lizzie.frame.suggestionclick = coords;
               Lizzie.frame.refresh();
@@ -389,11 +386,11 @@ public class AnalysisFrame extends JFrame {
         new MouseAdapter() {
           public void mouseExited(MouseEvent e) {
             if (!Lizzie.config.anaFrameUseMouseMove || clickOrder != -1) return;
-            if (Lizzie.frame.suggestionclick != Lizzie.frame.outOfBoundCoordinate) {
-              Lizzie.frame.boardRenderer.startNormalBoard();
-              Lizzie.frame.boardRenderer.clearBranch();
-              Lizzie.frame.suggestionclick = Lizzie.frame.outOfBoundCoordinate;
-              Lizzie.frame.mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
+            if (Lizzie.frame.suggestionclick != LizzieFrame.outOfBoundCoordinate) {
+              LizzieFrame.boardRenderer.startNormalBoard();
+              LizzieFrame.boardRenderer.clearBranch();
+              Lizzie.frame.suggestionclick = LizzieFrame.outOfBoundCoordinate;
+              Lizzie.frame.mouseOverCoordinate = LizzieFrame.outOfBoundCoordinate;
               selectedorder = -1;
               currentRow = -1;
               Lizzie.frame.refresh();
@@ -499,8 +496,7 @@ public class AnalysisFrame extends JFrame {
     if (index == 1) bestMoves = Lizzie.board.getData().bestMoves;
     else if (index == 2) bestMoves = Lizzie.board.getData().bestMoves2;
     if (bestMoves == null || bestMoves.isEmpty()) return;
-    BufferedImage cachedImage = new BufferedImage(width, height, TYPE_INT_ARGB);
-    Graphics2D g = (Graphics2D) cachedImage.getGraphics();
+    Graphics2D g = (Graphics2D) g0;
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     for (MoveData move : bestMoves) {
       totalPlayouts += move.playouts;
@@ -518,14 +514,14 @@ public class AnalysisFrame extends JFrame {
     g.setColor(Color.BLACK);
     g.setFont(new Font(Lizzie.config.uiFontName, Font.PLAIN, 13));
     g.drawString(
-        resourceBundle.getString("AnalysisFrame.totlePlayouts")
-            + Lizzie.frame.getPlayoutsString(totalPlayouts)
+        resourceBundle.getString("AnalysisFrame.totalVisits")
+            + Utils.getPlayoutsString(totalPlayouts)
             + " "
-            + resourceBundle.getString("AnalysisFrame.maxPlayouts")
-            + Lizzie.frame.getPlayoutsString(maxPlayouts)
+            + resourceBundle.getString("AnalysisFrame.maxVisits")
+            + Utils.getPlayoutsString(maxPlayouts)
             + " "
             + resourceBundle.getString("AnalysisFrame.concentration")
-            + String.format("%.2f", stable)
+            + String.format(Locale.ENGLISH, "%.2f", stable)
             + "%",
         5,
         15);
@@ -536,25 +532,29 @@ public class AnalysisFrame extends JFrame {
       g.drawLine(0, 20, width, 20);
       int nums = trueHeight / 20;
       for (int i = 0; i < nums; i++) {
-        g.drawString(i + 1 + "", 3, minHeight + i * 20 + 15);
+        g.drawString(String.valueOf(i + 1), 3, minHeight + i * 20 + 15);
         g.setColor(Color.DARK_GRAY);
         if (i < length) {
           double percents = (double) bestMoves.get(i).playouts / maxPlayouts;
           g.fillRect(20, minHeight + i * 20 + 2, (int) ((width - 80) * percents), 16);
           g.drawString(
-              String.format("%.2f", (double) bestMoves.get(i).playouts * 100 / totalPlayouts) + "%",
+              String.format(
+                      Locale.ENGLISH,
+                      "%.2f",
+                      (double) bestMoves.get(i).playouts * 100 / totalPlayouts)
+                  + "%",
               26 + (int) ((width - 80) * percents),
               minHeight + i * 20 + 15);
         }
       }
     }
-    if (Lizzie.config.isScaled) {
-      Graphics2D g1 = (Graphics2D) g0;
-      g1.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-      g1.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-      g1.drawImage(cachedImage, 0, 0, null);
-    } else g0.drawImage(cachedImage, 0, 0, null);
-    g.dispose();
+    //    if (Config.isScaled) {
+    //      Graphics2D g1 = (Graphics2D) g0;
+    //      g1.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+    //      g1.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
+    //      g1.drawImage(cachedImage, 0, 0, null);
+    //    } else g0.drawImage(cachedImage, 0, 0, null);
+    //    g.dispose();
   }
 
   class ColorTableCellRenderer extends DefaultTableCellRenderer {
@@ -582,16 +582,18 @@ public class AnalysisFrame extends JFrame {
         if (winrate.contains("("))
           diff = Double.parseDouble(winrate.substring(1, winrate.indexOf("(")));
         else diff = 0;
-        String score = table.getValueAt(row, 7).toString();
-        if (score.contains("("))
-          scoreDiff = Double.parseDouble(score.substring(1, score.indexOf("(")));
-        else scoreDiff = 0;
+        if (table.getColumnCount() > 7) {
+          String score = table.getValueAt(row, 7).toString();
+          if (score.contains("("))
+            scoreDiff = Double.parseDouble(score.substring(1, score.indexOf("(")));
+          else scoreDiff = 0;
+        } else scoreDiff = 0;
       } else isNextMove = false;
 
       String coordsName = table.getValueAt(row, 1).toString();
       int[] coords = new int[] {-2, -2};
       if (!coordsName.startsWith("pas") && coordsName.length() > 1) {
-        coords = Lizzie.board.convertNameToCoordinates(coordsName);
+        coords = Board.convertNameToCoordinates(coordsName);
       }
       if (coords[0] == Lizzie.frame.suggestionclick[0]
           && coords[1] == Lizzie.frame.suggestionclick[1]) {
@@ -617,20 +619,7 @@ public class AnalysisFrame extends JFrame {
     public void paintComponent(Graphics g) {
 
       if (isPlayoutPercents) {
-        //    if (isNextMove)
-        //       setBackground(new Color(0, 221, 0, 50));
-        //        } else setBackground(Color.WHITE);
-        //	setForeground(Color.BLACK);
         Graphics2D g2 = (Graphics2D) g;
-        //  final BasicStroke stroke=new BasicStroke(2.0f);
-
-        //   g2.setStroke(stroke);
-        //        	 if(isSelect)
-        //          	   g2.setColor(new Color(238, 221, 130));
-        //        	 else
-        //        if (isNextMove) {
-        //          g2.setColor(Color.LIGHT_GRAY);
-        //        } else
         g2.setColor(Color.LIGHT_GRAY);
         g2.fillRect(
             0,
@@ -648,13 +637,39 @@ public class AnalysisFrame extends JFrame {
         }
         if (isNextMove) {
           if (isSelect) {
-            if (diff < -20 || scoreDiff < -5) setBackground(new Color(150, 0, 0, 100));
-            else if (diff < -5 || scoreDiff < -3) setBackground(new Color(150, 150, 0, 120));
-            else setBackground(new Color(50, 150, 0, 100));
+            if (diff <= Lizzie.config.winLossThreshold5
+                || scoreDiff <= Lizzie.config.scoreLossThreshold5)
+              setBackground(new Color(85, 25, 80, 120));
+            else if (diff <= Lizzie.config.winLossThreshold4
+                || scoreDiff <= Lizzie.config.scoreLossThreshold4)
+              setBackground(new Color(208, 16, 19, 100));
+            else if (diff <= Lizzie.config.winLossThreshold3
+                || scoreDiff <= Lizzie.config.scoreLossThreshold3)
+              setBackground(new Color(200, 140, 50, 100));
+            else if (diff <= Lizzie.config.winLossThreshold2
+                || scoreDiff <= Lizzie.config.scoreLossThreshold2)
+              setBackground(new Color(180, 180, 0, 100));
+            else if (diff <= Lizzie.config.winLossThreshold1
+                || scoreDiff <= Lizzie.config.scoreLossThreshold1)
+              setBackground(new Color(140, 202, 34, 100));
+            else setBackground(new Color(0, 180, 0, 100));
           } else {
-            if (diff < -20 || scoreDiff < -5) setBackground(new Color(221, 0, 0, 50));
-            else if (diff < -5 || scoreDiff < -3) setBackground(new Color(221, 221, 0, 70));
-            else setBackground(new Color(0, 221, 0, 50));
+            if (diff <= Lizzie.config.winLossThreshold5
+                || scoreDiff <= Lizzie.config.scoreLossThreshold5)
+              setBackground(new Color(85, 25, 80, 70));
+            else if (diff <= Lizzie.config.winLossThreshold4
+                || scoreDiff <= Lizzie.config.scoreLossThreshold4)
+              setBackground(new Color(208, 16, 19, 50));
+            else if (diff <= Lizzie.config.winLossThreshold3
+                || scoreDiff <= Lizzie.config.scoreLossThreshold3)
+              setBackground(new Color(200, 140, 50, 50));
+            else if (diff <= Lizzie.config.winLossThreshold2
+                || scoreDiff <= Lizzie.config.scoreLossThreshold2)
+              setBackground(new Color(180, 180, 0, 50));
+            else if (diff <= Lizzie.config.winLossThreshold1
+                || scoreDiff <= Lizzie.config.scoreLossThreshold1)
+              setBackground(new Color(140, 202, 34, 50));
+            else setBackground(new Color(0, 180, 0, 60));
           }
         } else if (!isSelect && !isChanged) {
           setForeground(Color.BLACK);
@@ -666,17 +681,17 @@ public class AnalysisFrame extends JFrame {
   }
 
   private void handleTableClick(int row, int col) {
-    Lizzie.frame.boardRenderer.startNormalBoard();
+    LizzieFrame.boardRenderer.startNormalBoard();
     if (table.getValueAt(row, 1).toString().startsWith("pass")) return;
     if (clickOrder != -1
         && selectedorder >= 0
-        && Lizzie.board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[0]
+        && Board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[0]
             == Lizzie.frame.suggestionclick[0]
-        && Lizzie.board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[1]
+        && Board.convertNameToCoordinates(table.getValueAt(row, 1).toString())[1]
             == Lizzie.frame.suggestionclick[1]) {
-      Lizzie.frame.suggestionclick = Lizzie.frame.outOfBoundCoordinate;
-      Lizzie.frame.mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
-      Lizzie.frame.boardRenderer.clearBranch();
+      Lizzie.frame.suggestionclick = LizzieFrame.outOfBoundCoordinate;
+      Lizzie.frame.mouseOverCoordinate = LizzieFrame.outOfBoundCoordinate;
+      LizzieFrame.boardRenderer.clearBranch();
       selectedorder = -1;
       clickOrder = -1;
       currentRow = -1;
@@ -686,7 +701,7 @@ public class AnalysisFrame extends JFrame {
       clickOrder = row;
       selectedorder = row;
       currentRow = row;
-      int[] coords = Lizzie.board.convertNameToCoordinates(table.getValueAt(row, 1).toString());
+      int[] coords = Board.convertNameToCoordinates(table.getValueAt(row, 1).toString());
       Lizzie.frame.mouseOverCoordinate = coords;
       Lizzie.frame.suggestionclick = coords;
       Lizzie.frame.refresh();
@@ -696,27 +711,22 @@ public class AnalysisFrame extends JFrame {
   private void handleTableRightClick(int row, int col) {
     if (table.getValueAt(row, 1).toString().startsWith("pass")) return;
     if (selectedorder != row) {
-      int[] coords = Lizzie.board.convertNameToCoordinates(table.getValueAt(row, 1).toString());
+      int[] coords = Board.convertNameToCoordinates(table.getValueAt(row, 1).toString());
       Lizzie.frame.suggestionclick = coords;
-      Lizzie.frame.mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
+      Lizzie.frame.mouseOverCoordinate = LizzieFrame.outOfBoundCoordinate;
       Lizzie.frame.refresh();
       selectedorder = row;
     } else {
-      Lizzie.frame.suggestionclick = Lizzie.frame.outOfBoundCoordinate;
+      Lizzie.frame.suggestionclick = LizzieFrame.outOfBoundCoordinate;
       Lizzie.frame.refresh();
       selectedorder = -1;
     }
   }
 
-  private void handleTableDoubleClick(int row, int col) {
-    String aa = table.getValueAt(row, 1).toString();
-    int[] coords = Lizzie.board.convertNameToCoordinates(aa);
-    Lizzie.board.place(coords[0], coords[1]);
-  }
-
   public AbstractTableModel getTableModel() {
     return new AbstractTableModel() {
       ArrayList<MoveData> data2 = new ArrayList<MoveData>();
+      List<MoveData> bestMoves;
 
       public int getColumnCount() {
         Leelaz leelaz = null;
@@ -735,10 +745,9 @@ public class AnalysisFrame extends JFrame {
       public int getRowCount() {
         data2 = new ArrayList<MoveData>();
         if (index == 1) {
-          List<MoveData> bestMoves;
-          if (Lizzie.engineManager.isEngineGame && Lizzie.engineManager.engineGameInfo.isGenmove) {
-            if ((bestMoves = Lizzie.leelaz.getBestMoves()).isEmpty())
-              if (Lizzie.board.getHistory().getCurrentHistoryNode().previous().isPresent())
+          if (EngineManager.isEngineGame && Lizzie.config.showPreviousBestmovesInEngineGame) {
+            if (Lizzie.board.getHistory().getCurrentHistoryNode().previous().isPresent())
+              if ((bestMoves = Lizzie.leelaz.getBestMoves()).isEmpty())
                 bestMoves =
                     Lizzie.board
                         .getHistory()
@@ -747,11 +756,13 @@ public class AnalysisFrame extends JFrame {
                         .get()
                         .getData()
                         .bestMoves;
+
           } else bestMoves = Lizzie.board.getHistory().getCurrentHistoryNode().getData().bestMoves;
-          for (int i = 0; i < bestMoves.size(); i++) {
-            // if (!Lizzie.board.getData().bestMoves.get(i).coordinate.contains("ass"))
-            data2.add(bestMoves.get(i));
-          }
+          if (bestMoves != null)
+            for (int i = 0; i < bestMoves.size(); i++) {
+              // if (!Lizzie.board.getData().bestMoves.get(i).coordinate.contains("ass"))
+              data2.add(bestMoves.get(i));
+            }
         } else if (index == 2) {
           if (Lizzie.board.getData().bestMoves2 != null) {
             for (int i = 0; i < Lizzie.board.getData().bestMoves2.size(); i++) {
@@ -767,11 +778,12 @@ public class AnalysisFrame extends JFrame {
             int[] coords = next.getData().lastMove.get();
             boolean hasData = false;
             for (MoveData move : data2) {
-              if (Lizzie.board.convertNameToCoordinates(move.coordinate)[0] == coords[0]
-                  && Lizzie.board.convertNameToCoordinates(move.coordinate)[1] == coords[1]) {
+              if (Board.convertNameToCoordinates(move.coordinate)[0] == coords[0]
+                  && Board.convertNameToCoordinates(move.coordinate)[1] == coords[1]) {
                 if (move.order == 0) {
+                  move.winrate = data2.get(0).winrate;
                   move.isNextMove = true;
-                  move.bestWinrate = data2.get(0).oriwinrate;
+                  move.bestWinrate = data2.get(0).winrate;
                   move.bestScoreMean = data2.get(0).scoreMean;
                 } else {
                   if (index == 1) {
@@ -781,16 +793,15 @@ public class AnalysisFrame extends JFrame {
                         && next.getData().getPlayouts() > move.playouts) {
                       MoveData curMove = new MoveData();
                       curMove.playouts = next.getData().getPlayouts();
-                      curMove.coordinate =
-                          Lizzie.board.convertCoordinatesToName(coords[0], coords[1]);
-                      curMove.oriwinrate = 100.0 - next.getData().winrate;
+                      curMove.coordinate = Board.convertCoordinatesToName(coords[0], coords[1]);
+                      curMove.winrate = 100.0 - next.getData().winrate;
                       curMove.policy = 0;
                       curMove.scoreMean = -next.getData().scoreMean;
                       curMove.scoreStdev = 0;
                       curMove.order = move.order;
                       curMove.isNextMove = true;
                       curMove.lcb = 0;
-                      curMove.bestWinrate = data2.get(0).oriwinrate;
+                      curMove.bestWinrate = data2.get(0).winrate;
                       curMove.bestScoreMean = data2.get(0).scoreMean;
                       data2.add(0, curMove);
                       hasData = true;
@@ -803,16 +814,15 @@ public class AnalysisFrame extends JFrame {
                         && next.getData().getPlayouts2() > move.playouts) {
                       MoveData curMove = new MoveData();
                       curMove.playouts = next.getData().getPlayouts2();
-                      curMove.coordinate =
-                          Lizzie.board.convertCoordinatesToName(coords[0], coords[1]);
-                      curMove.oriwinrate = 100.0 - next.getData().winrate2;
+                      curMove.coordinate = Board.convertCoordinatesToName(coords[0], coords[1]);
+                      curMove.winrate = 100.0 - next.getData().winrate2;
                       curMove.policy = 0;
                       curMove.scoreMean = -next.getData().scoreMean2;
                       curMove.scoreStdev = 0;
                       curMove.order = move.order;
                       curMove.isNextMove = true;
                       curMove.lcb = 0;
-                      curMove.bestWinrate = data2.get(0).oriwinrate;
+                      curMove.bestWinrate = data2.get(0).winrate;
                       curMove.bestScoreMean = data2.get(0).scoreMean;
                       data2.add(0, curMove);
                       hasData = true;
@@ -823,14 +833,14 @@ public class AnalysisFrame extends JFrame {
                   curMove.order = move.order;
                   curMove.playouts = move.playouts;
                   curMove.coordinate = move.coordinate;
-                  curMove.oriwinrate = move.oriwinrate;
+                  curMove.winrate = move.winrate;
                   curMove.policy = move.policy;
                   curMove.scoreMean = move.scoreMean;
                   curMove.scoreStdev = move.scoreStdev;
                   curMove.order = move.order;
                   curMove.isNextMove = true;
                   curMove.lcb = move.lcb;
-                  curMove.bestWinrate = data2.get(0).oriwinrate;
+                  curMove.bestWinrate = data2.get(0).winrate;
                   curMove.bestScoreMean = data2.get(0).scoreMean;
                   data2.add(0, curMove);
                 }
@@ -842,15 +852,15 @@ public class AnalysisFrame extends JFrame {
               if (data2.size() > 0 && !hasData && !next.getData().bestMoves.isEmpty()) {
                 MoveData curMove = new MoveData();
                 curMove.playouts = 0;
-                curMove.coordinate = Lizzie.board.convertCoordinatesToName(coords[0], coords[1]);
-                curMove.oriwinrate = 100.0 - next.getData().winrate;
+                curMove.coordinate = Board.convertCoordinatesToName(coords[0], coords[1]);
+                curMove.winrate = 100.0 - next.getData().winrate;
                 curMove.policy = 0;
                 curMove.scoreMean = -next.getData().scoreMean;
                 curMove.scoreStdev = 0;
                 curMove.order = -100;
                 curMove.isNextMove = true;
                 curMove.lcb = 0;
-                curMove.bestWinrate = data2.get(0).oriwinrate;
+                curMove.bestWinrate = data2.get(0).winrate;
                 curMove.bestScoreMean = data2.get(0).scoreMean;
                 data2.add(0, curMove);
               }
@@ -858,15 +868,15 @@ public class AnalysisFrame extends JFrame {
               if (data2.size() > 0 && !hasData && !next.getData().bestMoves2.isEmpty()) {
                 MoveData curMove = new MoveData();
                 curMove.playouts = 0;
-                curMove.coordinate = Lizzie.board.convertCoordinatesToName(coords[0], coords[1]);
-                curMove.oriwinrate = 100.0 - next.getData().winrate2;
+                curMove.coordinate = Board.convertCoordinatesToName(coords[0], coords[1]);
+                curMove.winrate = 100.0 - next.getData().winrate2;
                 curMove.policy = 0;
                 curMove.scoreMean = -next.getData().scoreMean2;
                 curMove.scoreStdev = 0;
                 curMove.order = -100;
                 curMove.isNextMove = true;
                 curMove.lcb = 0;
-                curMove.bestWinrate = data2.get(0).oriwinrate;
+                curMove.bestWinrate = data2.get(0).winrate;
                 curMove.bestScoreMean = data2.get(0).scoreMean;
                 data2.add(0, curMove);
               }
@@ -892,7 +902,6 @@ public class AnalysisFrame extends JFrame {
         return "";
       }
 
-      @SuppressWarnings("unchecked")
       public Object getValueAt(int row, int col) {
 
         // Collections.sort(data2) ;
@@ -912,8 +921,8 @@ public class AnalysisFrame extends JFrame {
                   if (s1.lcb > s2.lcb) return -1;
                 }
                 if (sortnum == 3) {
-                  if (s1.oriwinrate < s2.oriwinrate) return 1;
-                  if (s1.oriwinrate > s2.oriwinrate) return -1;
+                  if (s1.winrate < s2.winrate) return 1;
+                  if (s1.winrate > s2.winrate) return -1;
                 }
                 if (sortnum == 4) {
                   if (s1.playouts < s2.playouts) return 1;
@@ -962,29 +971,30 @@ public class AnalysisFrame extends JFrame {
             // else
             return data.coordinate;
           case 2:
-            return String.format("%.1f", data.lcb);
+            return String.format(Locale.ENGLISH, "%.1f", data.lcb);
           case 3:
             if (data.isNextMove) {
-              double diff = data.oriwinrate - data.bestWinrate;
               if (data.order != 0) {
+                double diff = data.winrate - data.bestWinrate;
                 return (diff > 0 ? "↑" : "↓")
-                    + String.format("%.1f", diff)
+                    + String.format(Locale.ENGLISH, "%.1f", diff)
                     + "("
-                    + String.format("%.1f", data.oriwinrate)
+                    + String.format(Locale.ENGLISH, "%.1f", data.winrate)
                     + ")";
               }
-            } else return String.format("%.1f", data.oriwinrate);
+            }
+            return String.format(Locale.ENGLISH, "%.1f", data.winrate);
           case 4:
             if (data.order == -100) return resourceBundle.getString("AnalysisFrame.exclude");
-            else return Lizzie.frame.getPlayoutsString(data.playouts);
+            else return Utils.getPlayoutsString(data.playouts);
           case 5:
-            return String.format("%.1f", (double) data.playouts * 100 / totalPlayouts);
+            return String.format(
+                Locale.ENGLISH, "%.1f", (double) data.playouts * 100 / totalPlayouts);
           case 6:
-            return String.format("%.2f", data.policy);
+            return String.format(Locale.ENGLISH, "%.2f", data.policy);
           case 7:
             double score = data.scoreMean;
-            if (Lizzie.engineManager.isEngineGame
-                && Lizzie.engineManager.engineGameInfo.isGenmove) {
+            if (EngineManager.isEngineGame && EngineManager.engineGameInfo.isGenmove) {
               if (!Lizzie.board.getHistory().isBlacksTurn()) {
                 if (Lizzie.config.showKataGoBoardScoreMean) {
                   score = score + Lizzie.board.getHistory().getGameInfo().getKomi();
@@ -1008,13 +1018,13 @@ public class AnalysisFrame extends JFrame {
             if (data.isNextMove && data.order != 0) {
               double diff = data.scoreMean - data.bestScoreMean;
               return (diff > 0 ? "↑" : "↓")
-                  + String.format("%.1f", diff)
+                  + String.format(Locale.ENGLISH, "%.1f", diff)
                   + "("
-                  + String.format("%.1f", score)
+                  + String.format(Locale.ENGLISH, "%.1f", score)
                   + ")";
-            } else return String.format("%.1f", score);
+            } else return String.format(Locale.ENGLISH, "%.1f", score);
           case 8:
-            return String.format("%.1f", data.scoreStdev);
+            return String.format(Locale.ENGLISH, "%.1f", data.scoreStdev);
           default:
             return "";
         }

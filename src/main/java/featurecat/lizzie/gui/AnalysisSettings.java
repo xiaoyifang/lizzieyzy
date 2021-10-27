@@ -29,6 +29,7 @@ public class AnalysisSettings extends JDialog {
   private JFontTextArea engineCmd;
   private JFontCheckBox chkPreLoad;
   private JFontCheckBox chkAlwaysOverride;
+  private JFontCheckBox chkAutoExit;
   private JDialog dialog = this;
   private JFontCheckBox chkUseJavaSSH;
 
@@ -37,8 +38,8 @@ public class AnalysisSettings extends JDialog {
     this.setAlwaysOnTop(Lizzie.frame.isAlwaysOnTop());
     setResizable(false);
     setTitle(Lizzie.resourceBundle.getString("AnalysisSettings.title")); // ("闪电分析设置");
-    //  setSize(609, 367);
-    Lizzie.setFrameSize(this, 592, 375);
+    // setSize(609, 367);
+    Lizzie.setFrameSize(this, 592, 385);
     getContentPane().setLayout(null);
 
     JLabel lblEngineCmd =
@@ -49,7 +50,7 @@ public class AnalysisSettings extends JDialog {
 
     engineCmd = new JFontTextArea();
     engineCmd.setBounds(10, 26, 566, 130);
-    engineCmd.setFont(new Font("", Font.PLAIN, Config.frameFontSize));
+    engineCmd.setFont(new Font(Config.sysDefaultFontName, Font.PLAIN, Config.frameFontSize));
     getContentPane().add(engineCmd);
 
     JLabel example =
@@ -100,18 +101,24 @@ public class AnalysisSettings extends JDialog {
     group.add(rdoUseSpecificRules);
     group.add(rdoUseCurrentRules);
 
-    chkPreLoad =
-        new JFontCheckBox(
-            Lizzie.resourceBundle.getString("AnalysisSettings.chkPreLoad")); // ("启动Lizzie时预加载引擎");
-    chkPreLoad.setBounds(10, 306, 304, 23);
-    getContentPane().add(chkPreLoad);
-
     chkAlwaysOverride =
         new JFontCheckBox(
             Lizzie.resourceBundle.getString(
                 "AnalysisSettings.chkAlwaysOverride")); // ("总是覆盖已有分析结果");
     chkAlwaysOverride.setBounds(10, 281, 370, 23);
     getContentPane().add(chkAlwaysOverride);
+
+    chkPreLoad =
+        new JFontCheckBox(
+            Lizzie.resourceBundle.getString("AnalysisSettings.chkPreLoad")); // ("启动Lizzie时预加载引擎");
+    chkPreLoad.setBounds(10, 306, 304, 23);
+    getContentPane().add(chkPreLoad);
+
+    chkAutoExit =
+        new JFontCheckBox(
+            Lizzie.resourceBundle.getString("AnalysisSettings.chkAutoExit")); // ("分析完毕后关闭引擎");
+    chkAutoExit.setBounds(10, 331, 304, 23);
+    getContentPane().add(chkAutoExit);
 
     JButton btnSetRules =
         new JFontButton(
@@ -138,7 +145,9 @@ public class AnalysisSettings extends JDialog {
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
             {
-              Lizzie.frame.analysisEngine.waitFrame.setVisible(false);
+              if (Lizzie.frame.analysisEngine != null
+                  && Lizzie.frame.analysisEngine.waitFrame != null)
+                Lizzie.frame.analysisEngine.waitFrame.setVisible(false);
               saveConfig();
               setVisible(false);
               Lizzie.frame.destroyAnalysisEngine();
@@ -149,7 +158,7 @@ public class AnalysisSettings extends JDialog {
     btnConfirmAndRedo.setMargin(new Insets(0, 0, 0, 0));
     btnConfirmAndRedo.setBounds(
         Lizzie.config.isFrameFontSmall() ? 375 : (Lizzie.config.isFrameFontMiddle() ? 355 : 325),
-        311,
+        321,
         Lizzie.config.isFrameFontSmall() ? 99 : (Lizzie.config.isFrameFontMiddle() ? 120 : 150),
         31);
     btnConfirmAndRedo.setVisible(isDuringAnalyze);
@@ -161,7 +170,9 @@ public class AnalysisSettings extends JDialog {
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
             if (fromError) {
-              Lizzie.frame.analysisEngine.waitFrame.setVisible(false);
+              if (Lizzie.frame.analysisEngine != null
+                  && Lizzie.frame.analysisEngine.waitFrame != null)
+                Lizzie.frame.analysisEngine.waitFrame.setVisible(false);
               saveConfig();
               setVisible(false);
               Lizzie.frame.destroyAnalysisEngine();
@@ -172,7 +183,7 @@ public class AnalysisSettings extends JDialog {
             }
           }
         });
-    btnConfirm.setBounds(484, 311, 93, 31);
+    btnConfirm.setBounds(484, 321, 93, 31);
     getContentPane().add(btnConfirm);
 
     LinkLabel lblHint2 =
@@ -182,14 +193,14 @@ public class AnalysisSettings extends JDialog {
 
     txtMaxVisits.setText(
         (Lizzie.frame.isBatchAnalysisMode
-                ? Lizzie.config.batchAnalysisPlayouts
-                : Lizzie.config.analysisMaxVisits)
-            + "");
+            ? String.valueOf(Lizzie.config.batchAnalysisPlayouts)
+            : String.valueOf(Lizzie.config.analysisMaxVisits)));
     engineCmd.setText(Lizzie.config.analysisEngineCommand);
 
     if (Lizzie.config.analysisUseCurrentRules) rdoUseCurrentRules.setSelected(true);
     else rdoUseSpecificRules.setSelected(true);
 
+    chkAutoExit.setSelected(Lizzie.config.analysisAutoQuit);
     chkPreLoad.setSelected(Lizzie.config.analysisEnginePreLoad);
     chkAlwaysOverride.setSelected(Lizzie.config.analysisAlwaysOverride);
 
@@ -251,7 +262,7 @@ public class AnalysisSettings extends JDialog {
 
     getContentPane().add(chkUseJavaSSH);
     getContentPane().add(setRemoteEngine);
-    setLocationRelativeTo(null);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
   }
 
   private class LinkLabel extends JTextPane {
@@ -281,10 +292,10 @@ public class AnalysisSettings extends JDialog {
               + "; font-family:"
               + Lizzie.config.fontName
               + ", Consolas, Menlo, Monaco, 'Ubuntu Mono', monospace;"
-              + ("font-size:" + Lizzie.config.frameFontSize)
+              + ("font-size:" + Config.frameFontSize)
               + "}";
       htmlStyle.addRule(style);
-      // setFont(new Font("", Font.PLAIN, Config.frameFontSize));
+      // setFont(new Font(Config.sysDefaultFontName, Font.PLAIN, Config.frameFontSize));
       setEditorKit(htmlKit);
       setDocument(htmlDoc);
       setText(text);
@@ -326,9 +337,11 @@ public class AnalysisSettings extends JDialog {
     //          Lizzie.resourceBundle.getString(
     //              "AnalysisSettings.maxVisits1Hint")); // ("单步计算量最小为2,当前设置为1,将自动调整为2");
     if (Lizzie.config.analysisMaxVisits <= 1) Lizzie.config.analysisMaxVisits = 1;
+    Lizzie.config.analysisAutoQuit = chkAutoExit.isSelected();
     Lizzie.config.analysisEnginePreLoad = chkPreLoad.isSelected();
     Lizzie.config.analysisAlwaysOverride = chkAlwaysOverride.isSelected();
     Lizzie.config.analysisUseCurrentRules = rdoUseCurrentRules.isSelected();
+    Lizzie.config.uiConfig.put("analysis-auto-quit", Lizzie.config.analysisAutoQuit);
     Lizzie.config.uiConfig.put("analysis-engine-preload", Lizzie.config.analysisEnginePreLoad);
     Lizzie.config.uiConfig.put("analysis-always-override", Lizzie.config.analysisAlwaysOverride);
     Lizzie.config.uiConfig.put("analysis-use-current-rules", Lizzie.config.analysisUseCurrentRules);

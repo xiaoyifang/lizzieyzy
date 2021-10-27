@@ -53,7 +53,6 @@ public class SetDiffAnalyze extends JDialog {
   private void initComponents() {
     setMinimumSize(new Dimension(100, 100));
     setResizable(false);
-    // aaa
     setTitle(Lizzie.resourceBundle.getString("SetDiffAnalyze.title"));
 
     Container contentPane = getContentPane();
@@ -123,10 +122,10 @@ public class SetDiffAnalyze extends JDialog {
     contentPanel.add(new JFontLabel(Lizzie.resourceBundle.getString("StartAnaDialog.timePerMove")));
     contentPanel.add(txtTime);
     contentPanel.add(
-        new JFontLabel(Lizzie.resourceBundle.getString("StartAnaDialog.totalPlayoutsPerMove")));
+        new JFontLabel(Lizzie.resourceBundle.getString("StartAnaDialog.totalVisitsPerMove")));
     contentPanel.add(txtPlayouts);
     contentPanel.add(
-        new JFontLabel(Lizzie.resourceBundle.getString("StartAnaDialog.firstPlayoutsPerMove")));
+        new JFontLabel(Lizzie.resourceBundle.getString("StartAnaDialog.firstVisitsPerMove")));
     contentPanel.add(txtFirstPlayouts);
 
     chkBlack.setSelected(Lizzie.config.autoAnaDiffBlack);
@@ -134,14 +133,15 @@ public class SetDiffAnalyze extends JDialog {
     chkWin.setSelected(Lizzie.config.autoAnaDiffUseWin);
     chkScore.setSelected(Lizzie.config.autoAnaDiffUseScore);
     if (Lizzie.config.autoAnaDiffWinThreshold > 0)
-      txtWinDiff.setText(Lizzie.config.autoAnaDiffWinThreshold + "");
+      txtWinDiff.setText(String.valueOf(Lizzie.config.autoAnaDiffWinThreshold));
     if (Lizzie.config.autoAnaDiffScoreThreshold > 0)
-      txtScoreDiff.setText(Lizzie.config.autoAnaDiffScoreThreshold + "");
-    if (Lizzie.config.autoAnaDiffTime > 0) txtTime.setText(Lizzie.config.autoAnaDiffTime + "");
+      txtScoreDiff.setText(String.valueOf(Lizzie.config.autoAnaDiffScoreThreshold));
+    if (Lizzie.config.autoAnaDiffTime > 0)
+      txtTime.setText(String.valueOf(Lizzie.config.autoAnaDiffTime));
     if (Lizzie.config.autoAnaDiffPlayouts > 0)
-      txtPlayouts.setText(Lizzie.config.autoAnaDiffPlayouts + "");
+      txtPlayouts.setText(String.valueOf(Lizzie.config.autoAnaDiffPlayouts));
     if (Lizzie.config.autoAnaDiffFirstPlayouts > 0)
-      txtFirstPlayouts.setText(Lizzie.config.autoAnaDiffFirstPlayouts + "");
+      txtFirstPlayouts.setText(String.valueOf(Lizzie.config.autoAnaDiffFirstPlayouts));
     txtWinDiff.setEnabled(chkWin.isSelected());
     txtScoreDiff.setEnabled(chkScore.isSelected());
     chkWin.addActionListener(

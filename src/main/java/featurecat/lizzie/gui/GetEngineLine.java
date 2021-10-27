@@ -80,8 +80,6 @@ public class GetEngineLine {
               "exe",
               "bat");
       chooser.setFileFilter(filter);
-    } else {
-      // setVisible(false);
     }
     chooser.setMultiSelectionEnabled(false);
     chooser.setDialogTitle(
@@ -94,7 +92,6 @@ public class GetEngineLine {
       if (engineFile != null) {
         enginePath = relativizePath(engineFile.toPath());
         if (isIkatago) {
-          // aaa
           boolean isColab = false;
           Object[] options = {"Colab", resourceBundle.getString("MoreEngines.otherPlatform")};
 
@@ -135,12 +132,7 @@ public class GetEngineLine {
         }
         getCommandHelp();
         if (!isKataGo && !isLeela && !isIkatago) {
-          ep = new EngineParameter(enginePath, weightPath, commandHelp, false, "", false, true);
-          ep.setVisible(true);
-          if (!ep.commandLine.isEmpty()) {
-            engineLine = ep.commandLine;
-          }
-          return engineLine;
+          return enginePath;
         }
         JFileChooser chooserw = new JFileChooser(".");
         FileFilterTest1 fileFilter = new FileFilterTest1();

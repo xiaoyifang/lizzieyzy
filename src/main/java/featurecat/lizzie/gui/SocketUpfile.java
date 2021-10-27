@@ -37,7 +37,7 @@ public class SocketUpfile {
     try {
       // 客户端socket指定服务器的地址和端口号121.36.229.204
       socket = new Socket("lizzieyzy.cn", 3085);
-      System.out.println("Socket=" + socket);
+      // System.out.println("Socket=" + socket);
       // 同服务器原理一样
       br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "utf-8"));
       pw =
@@ -97,9 +97,9 @@ public class SocketUpfile {
       // sendContent("SktINFOEnd",pw);
       pw.println("SktINFOEnd");
       pw.flush();
-      Lizzie.frame.isShareing = true;
+      LizzieFrame.isShareing = true;
       String sgfContent = SGFParser.saveToString(true);
-      Lizzie.frame.isShareing = false;
+      LizzieFrame.isShareing = false;
       sendContent("SktSGFStart", pw);
 
       sendContent(sgfContent, pw);

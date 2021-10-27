@@ -137,7 +137,7 @@ public class MoreEngines extends JPanel {
     this.engineName.setFont(new Font("Microsoft YaHei", 0, 14));
     JFontLabel lblName = new JFontLabel(this.resourceBundle.getString("MoreEngines.lblName"));
     this.txtName = new JFontTextField();
-    this.txtName.setFont(new Font("", 0, Config.frameFontSize));
+    this.txtName.setFont(new Font(Config.sysDefaultFontName, 0, Config.frameFontSize));
     this.txtKomi = new JFontTextField();
     JFontLabel lblInitialCommand =
         new JFontLabel(resourceBundle.getString("MoreEngines.lblInitialCommand"));
@@ -372,7 +372,7 @@ public class MoreEngines extends JPanel {
     this.chkDefault.setBounds(
         Lizzie.config.isFrameFontSmall() ? 85 : (Lizzie.config.isFrameFontMiddle() ? 85 : 100),
         270,
-        Lizzie.config.isFrameFontSmall() ? 60 : (Lizzie.config.isFrameFontMiddle() ? 60 : 80),
+        Lizzie.config.isFrameFontSmall() ? 64 : (Lizzie.config.isFrameFontMiddle() ? 60 : 80),
         24);
     lblWidth.setBounds(
         Lizzie.config.isFrameFontSmall() ? 156 : (Lizzie.config.isFrameFontMiddle() ? 156 : 190),
@@ -675,6 +675,7 @@ public class MoreEngines extends JPanel {
             newEng.width = 19;
             engData.add(0, newEng);
             Utils.saveEngineSettings(engData);
+            needUpdateEngine = true;
             handleTableClick(0);
           }
         });
@@ -705,6 +706,7 @@ public class MoreEngines extends JPanel {
                     table.validate();
                     table.updateUI();
                     table.getSelectionModel().clearSelection();
+                    needUpdateEngine = true;
                     handleTableClick(curIndex);
                   }
                 });
@@ -1151,6 +1153,11 @@ public class MoreEngines extends JPanel {
         engineDt.keyGenPath = this.keyGenPath;
       } else {
         engineDt.password = Utils.doEncrypt(new String(this.txtPassword.getPassword()));
+      }
+    }
+    if (engineDt.isDefault) {
+      for (EngineData engine : engineData) {
+        engine.isDefault = false;
       }
     }
     if (this.curIndex + 1 > engineData.size()) {

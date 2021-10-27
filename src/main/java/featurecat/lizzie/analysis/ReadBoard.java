@@ -1,52 +1,47 @@
 package featurecat.lizzie.analysis;
 
+import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
 import featurecat.lizzie.gui.FloatBoard;
+import featurecat.lizzie.gui.LizzieFrame;
 import featurecat.lizzie.gui.SMessage;
+import featurecat.lizzie.rules.Board;
 import featurecat.lizzie.rules.BoardHistoryNode;
 import featurecat.lizzie.rules.Stone;
 import featurecat.lizzie.util.Utils;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import org.jdesktop.swingx.util.OS;
 
 public class ReadBoard {
   public Process process;
-  private final ResourceBundle resourceBundle =
-      Lizzie.config.useLanguage == 0
-          ? ResourceBundle.getBundle("l10n.DisplayStrings")
-          : (Lizzie.config.useLanguage == 1
-              ? ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("zh", "CN"))
-              : ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("en", "US")));
-  private BufferedInputStream inputStream;
+  private InputStreamReader inputStream;
   private BufferedOutputStream outputStream;
   private ScheduledExecutorService executor;
   ArrayList<Integer> tempcount = new ArrayList<Integer>();
-  // public boolean gtpConsole;
-  private long startSyncTime = 0;
+  // private long startSyncTime = 0;
 
-  // private boolean isLoaded = false;
-  private boolean isLoaded = false;
-  private boolean checkedVersionSucceed = false;
-  private int version = 608;
+  public boolean isLoaded = false;
+  private int version = 916;
   private String engineCommand;
   public String currentEnginename = "";
-  private int port = 24781;
+  private int port = -1;
 
   boolean firstcount = true;
   public int numberofcount = 0;
   public boolean firstSync = true;
-  public boolean syncBoth = Lizzie.config.syncBoth;
+  // public boolean syncBoth = Lizzie.config.syncBoth;
   private ReadBoardStream readBoardStream;
   private Socket socket;
   private ServerSocket s;
@@ -55,114 +50,190 @@ public class ReadBoard {
   private boolean needGenmove = false;
   private boolean showInBoard = false;
   private boolean isSyncing = false;
+  // private long startTime;
+  private boolean javaReadBoard = false;
+  private String javaReadBoardName = "readboard-1.5.4-shaded.jar";
+  private boolean waitSocket = true;
+  public boolean lastMovePlayByLizzie = false;
 
-  public ReadBoard(boolean usePipe) throws Exception {
+  public ReadBoard(boolean usePipe, boolean isJavaReadBoard) throws Exception {
     this.usePipe = usePipe;
+    this.javaReadBoard = isJavaReadBoard;
     if (s != null && !s.isClosed()) {
       s.close();
     }
-    if (!usePipe) engineCommand = "readboard\\readboard.bat";
-    else engineCommand = "readboard\\readboard.exe";
+    if (usePipe) engineCommand = "readboard\\readboard.exe";
+    else engineCommand = "readboard\\readboard.bat";
     startEngine(engineCommand, 0);
   }
 
-  private void createSocketServer(int port) {
+  private void createSocketServer() {
     try {
-      s = new ServerSocket(port);
-      // 等待新请求、否则一直阻塞
+      s = new ServerSocket(0);
+      port = s.getLocalPort();
+      waitSocket = false;
       while (true) {
         socket = s.accept();
-        // System.out.println("Socket Start:" + socket);
         readBoardStream = new ReadBoardStream(socket);
+        break;
       }
     } catch (Exception e) {
-      // String a=e.getMessage();
       if (!noMsg)
         Utils.showMsg(
-            resourceBundle.getString("ReadBoard.port")
+            Lizzie.resourceBundle.getString("ReadBoard.port")
                 + " "
                 + port
                 + " "
-                + resourceBundle.getString("ReadBoard.portUsed")
+                + Lizzie.resourceBundle.getString("ReadBoard.portUsed")
                 + e.getMessage());
       try {
-
         s.close();
       } catch (Exception e1) {
-        // TODO Auto-generated catch block
-        //	e1.printStackTrace();
+        e1.printStackTrace();
       }
-      // e.printStackTrace();
-    } finally {
-      try {
-        if (s != null) s.close();
-        if (socket != null) socket.close();
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        // e.printStackTrace();
-      }
+      e.printStackTrace();
     }
   }
 
   public void startEngine(String engineCommand, int index) throws Exception {
     if (!usePipe) {
+      waitSocket = true;
       noMsg = false;
       Runnable runnable2 =
           new Runnable() {
             public void run() {
-              if (s == null || s.isClosed()) createSocketServer(port);
+              if (s == null || s.isClosed()) createSocketServer();
             }
           };
       Thread thread2 = new Thread(runnable2);
       thread2.start();
+      int times = 300;
+      while (waitSocket && times > 0) {
+        Thread.sleep(10);
+        times--;
+      }
     }
     List<String> commands = new ArrayList<String>();
     commands.add(engineCommand);
     commands.add("yzy");
-    //   commands.add(Lizzie.config.readBoardArg1);
-    commands.add(Lizzie.config.readBoardArg2 + "");
-    if (Lizzie.config.readBoardArg3) {
-      commands.add("0");
-    } else {
-      commands.add("1");
-    }
-    if (syncBoth) {
-      commands.add("0");
-    } else {
-      commands.add("1");
-    }
     commands.add(
-        Lizzie.frame.toolbar.txtAutoPlayTime.getText().equals("")
+        !LizzieFrame.toolbar.chkAutoPlayTime.isSelected()
+                || LizzieFrame.toolbar.txtAutoPlayTime.getText().equals("")
             ? " "
-            : Lizzie.frame.toolbar.txtAutoPlayTime.getText());
+            : LizzieFrame.toolbar.txtAutoPlayTime.getText());
     commands.add(
-        Lizzie.frame.toolbar.txtAutoPlayPlayouts.getText().equals("")
+        !LizzieFrame.toolbar.chkAutoPlayPlayouts.isSelected()
+                || LizzieFrame.toolbar.txtAutoPlayPlayouts.getText().equals("")
             ? " "
-            : Lizzie.frame.toolbar.txtAutoPlayPlayouts.getText());
+            : LizzieFrame.toolbar.txtAutoPlayPlayouts.getText());
     commands.add(
-        Lizzie.frame.toolbar.txtAutoPlayFirstPlayouts.getText().equals("")
+        !LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.isSelected()
+                || LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.getText().equals("")
             ? " "
-            : Lizzie.frame.toolbar.txtAutoPlayFirstPlayouts.getText());
-    //   if (Lizzie.config.readBoardArg4) {
-    commands.add("0");
-    // } else {
-    //    commands.add("1");
-    //   }
+            : LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.getText());
+
     if (usePipe) commands.add("0");
     else commands.add("1");
     if (Lizzie.config.isChinese) commands.add("0");
     else commands.add("1");
+    if (usePipe) commands.add("-1");
+    else commands.add(String.valueOf(port));
     ProcessBuilder processBuilder = new ProcessBuilder(commands);
     processBuilder.redirectErrorStream(true);
-    try {
-      process = processBuilder.start();
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      if (!usePipe) {
-        Utils.showMsg(resourceBundle.getString("ReadBoard.noFileHint"));
-        return;
-      } else {
-        throw new Exception("start pipe err");
+    if (javaReadBoard) {
+      File javaReadBoard = new File("readboard_java" + File.separator + javaReadBoardName);
+      if (!javaReadBoard.exists()) {
+        Utils.deleteDir(new File("readboard_java"));
+        Utils.copyReadBoardJava(javaReadBoardName);
+      }
+    }
+    if (javaReadBoard) {
+      // 共传入5个参数,是否中文 是否java外观 字体大小 宽 高
+      String param = "";
+      if (Lizzie.config.isChinese) param = param + " true ";
+      else param = param + " false ";
+      if (Lizzie.config.useJavaLooks) param = param + "true ";
+      else param = param + "false ";
+      param = param + (int) Math.round(Config.frameFontSize * Lizzie.javaScaleFactor);
+      param = " " + param + " " + Board.boardWidth + " " + Board.boardHeight;
+      try {
+        if (OS.isWindows()) {
+          boolean success = false;
+          String java64Path = "jre\\java11\\bin\\java.exe";
+          File java64 = new File(java64Path);
+
+          if (java64.exists()) {
+            try {
+              process =
+                  Runtime.getRuntime()
+                      .exec(
+                          java64Path
+                              + " -jar -Dsun.java2d.uiScale=1.0 readboard_java"
+                              + File.separator
+                              + javaReadBoardName
+                              + param);
+              success = true;
+            } catch (Exception e) {
+              success = false;
+              e.printStackTrace();
+            }
+          }
+          if (!success) {
+            String java32Path = "jre\\java8_32\\bin\\java.exe";
+            File java32 = new File(java32Path);
+            if (java32.exists()) {
+              try {
+                process =
+                    Runtime.getRuntime()
+                        .exec(
+                            java32
+                                + " -jar -Dsun.java2d.uiScale=1.0 readboard_java"
+                                + File.separator
+                                + javaReadBoardName
+                                + param);
+                success = true;
+              } catch (Exception e) {
+                success = false;
+                e.printStackTrace();
+              }
+            }
+          }
+          if (!success) {
+            process =
+                Runtime.getRuntime()
+                    .exec(
+                        "java -Dsun.java2d.uiScale=1.0 -jar readboard_java"
+                            + File.separator
+                            + javaReadBoardName
+                            + param);
+          }
+        } else {
+          process =
+              Runtime.getRuntime()
+                  .exec(
+                      "java -Dsun.java2d.uiScale=1.0 -jar readboard_java"
+                          + File.separator
+                          + javaReadBoardName
+                          + param);
+        }
+      } catch (Exception e) {
+        Utils.showMsg(e.getLocalizedMessage());
+      }
+    } else {
+      try {
+        process = processBuilder.start();
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        if (!usePipe) {
+          Utils.showMsg(e.getLocalizedMessage());
+          SMessage msg = new SMessage();
+          msg.setMessage(Lizzie.resourceBundle.getString("ReadBoard.loadFailed"), 2);
+          s.close();
+          return;
+        } else {
+          System.out.print(e.getLocalizedMessage());
+          throw new Exception("Start pipe failed");
+        }
       }
     }
     if (usePipe) {
@@ -172,8 +243,8 @@ public class ReadBoard {
     }
   }
 
-  private void initializeStreams() {
-    inputStream = new BufferedInputStream(process.getInputStream());
+  private void initializeStreams() throws UnsupportedEncodingException {
+    inputStream = new InputStreamReader(process.getInputStream(), "UTF-8");
     outputStream = new BufferedOutputStream(process.getOutputStream());
   }
 
@@ -187,10 +258,10 @@ public class ReadBoard {
 
         if ((c == '\n')) {
           try {
-            parseLine(line.toString(), false);
+            parseLine(line.toString());
             if (!isLoaded) {
               isLoaded = true;
-              checkVersion();
+              if (!javaReadBoard) checkVersion();
             }
           } catch (Exception ex) {
             ex.printStackTrace();
@@ -205,7 +276,21 @@ public class ReadBoard {
         Lizzie.frame.floatBoard.setVisible(false);
       }
       System.out.println("Board synchronization tool process ended.");
-      shutdown();
+      if (!javaReadBoard && !isLoaded) {
+        try {
+          Runtime.getRuntime().exec("powershell /c start readboard\\readboard.bat");
+        } catch (IOException e) {
+          try {
+            Runtime.getRuntime().exec("powershell /c start readboard\\readboard.exe");
+          } catch (Exception s) {
+            s.printStackTrace();
+          }
+          e.printStackTrace();
+        }
+        SMessage msg = new SMessage();
+        msg.setMessage(Lizzie.resourceBundle.getString("ReadBoard.loadFailed"), 2);
+        shutdown();
+      } else shutdown();
       // Do no exit for switching weights
       // System.exit(-1);
     } catch (IOException e) {
@@ -216,7 +301,7 @@ public class ReadBoard {
     }
   }
 
-  public void parseLine(String line, boolean fromHttp) {
+  public void parseLine(String line) {
     // if (Lizzie.gtpConsole.isVisible())
     // Lizzie.gtpConsole.addLine(line);
     //  System.out.println(line);
@@ -224,16 +309,33 @@ public class ReadBoard {
     //      if (Lizzie.frame.playerIsBlack && !Lizzie.board.getHistory().isBlacksTurn()) return;
     //      if (!Lizzie.frame.playerIsBlack && Lizzie.board.getHistory().isBlacksTurn()) return;
     //    }
+    if (line.startsWith("playpon")) {
+      String[] params = line.split(" ");
+      if (params.length == 2) {
+        if (params[1].startsWith("on")) {
+          Lizzie.config.readBoardPonder = true;
+        } else if (params[1].startsWith("off")) {
+          Lizzie.config.readBoardPonder = false;
+        }
+      }
+    }
     if (line.startsWith("re=")) {
-      String[] params = line.substring(3, line.length() - (fromHttp ? 0 : 2)).split(",");
-      if (params.length == Lizzie.board.boardWidth) {
-        for (int i = 0; i < params.length; i++) tempcount.add(Integer.parseInt(params[i]));
+      String[] params = line.substring(3).split(",");
+      if (params.length == Board.boardWidth) {
+        for (int i = 0; i < params.length; i++)
+          tempcount.add(Integer.parseInt(params[i].substring(0, 1)));
       }
     }
     if (line.startsWith("version")) {
-      Lizzie.gtpConsole.addErrorLine("Board synchronization tool " + line);
+      Lizzie.gtpConsole.addLineReadBoard("Board synchronization tool " + line + "\n");
       String[] params = line.trim().split(" ");
-      if (Integer.parseInt(params[1]) >= version) checkedVersionSucceed = true;
+      if (Integer.parseInt(params[1]) < version) {
+        SMessage msg = new SMessage();
+        msg.setMessage(Lizzie.resourceBundle.getString("ReadBoard.versionCheckFaied"), 2);
+      }
+    }
+    if (line.startsWith("error")) {
+      Lizzie.gtpConsole.addLineReadBoard(line + (usePipe ? "" : "\n"));
     }
     if (line.startsWith("end")) {
       if (!isSyncing) syncBoardStones(false);
@@ -245,10 +347,11 @@ public class ReadBoard {
     }
     if (line.startsWith("start")) {
       String[] params = line.trim().split(" ");
-      if (params.length == 3) {
+      if (params.length >= 3) {
         int boardWidth = Integer.parseInt(params[1]);
-        if (boardWidth != Lizzie.board.boardWidth || boardWidth != Lizzie.board.boardHeight) {
-          Lizzie.board.reopen(boardWidth, boardWidth);
+        int boardHeight = Integer.parseInt(params[2]);
+        if (boardWidth != Board.boardWidth || boardHeight != Board.boardHeight) {
+          Lizzie.board.reopen(boardWidth, boardHeight);
         } else {
           Lizzie.board.clear(false);
         }
@@ -267,21 +370,14 @@ public class ReadBoard {
       Lizzie.frame.bothSync = false;
     }
     if (line.startsWith("stopAutoPlay")) {
-      Lizzie.frame.toolbar.chkAutoPlay.setSelected(false);
-      Lizzie.frame.toolbar.isAutoPlay = false;
+      LizzieFrame.toolbar.chkAutoPlay.setSelected(false);
+      LizzieFrame.toolbar.isAutoPlay = false;
     }
     if (line.startsWith("endsync")) {
       noMsg = true;
-      shutdown();
       Lizzie.frame.syncBoard = false;
       if (Lizzie.frame.isAnaPlayingAgainstLeelaz) {
-        Lizzie.frame.isAnaPlayingAgainstLeelaz = false;
-        Lizzie.frame.toolbar.chkAutoPlay.setSelected(false);
-        Lizzie.frame.toolbar.isAutoPlay = false;
-        Lizzie.frame.toolbar.chkAutoPlayBlack.setSelected(false);
-        Lizzie.frame.toolbar.chkAutoPlayWhite.setSelected(false);
-        Lizzie.frame.toolbar.chkShowBlack.setSelected(true);
-        Lizzie.frame.toolbar.chkShowWhite.setSelected(true);
+        Lizzie.frame.stopAiPlayingAndPolicy();
       }
       showInBoard = false;
       if (Lizzie.frame.floatBoard != null) {
@@ -291,13 +387,7 @@ public class ReadBoard {
     if (line.startsWith("stopsync")) {
       Lizzie.frame.syncBoard = false;
       if (Lizzie.frame.isAnaPlayingAgainstLeelaz) {
-        Lizzie.frame.isAnaPlayingAgainstLeelaz = false;
-        Lizzie.frame.toolbar.chkAutoPlay.setSelected(false);
-        Lizzie.frame.toolbar.isAutoPlay = false;
-        Lizzie.frame.toolbar.chkAutoPlayBlack.setSelected(false);
-        Lizzie.frame.toolbar.chkAutoPlayWhite.setSelected(false);
-        Lizzie.frame.toolbar.chkShowBlack.setSelected(true);
-        Lizzie.frame.toolbar.chkShowWhite.setSelected(true);
+        Lizzie.frame.stopAiPlayingAndPolicy();
       }
       Lizzie.leelaz.nameCmd();
       showInBoard = false;
@@ -313,54 +403,56 @@ public class ReadBoard {
         int firstPlayouts = Integer.parseInt(playParams[2]);
         int time = Integer.parseInt(playParams[0]);
         if (time > 0) {
-          Lizzie.frame.toolbar.txtAutoPlayTime.setText(time + "");
-          Lizzie.frame.toolbar.chkAutoPlayTime.setSelected(true);
+          LizzieFrame.toolbar.txtAutoPlayTime.setText(String.valueOf(time));
+          LizzieFrame.toolbar.chkAutoPlayTime.setSelected(true);
         } else {
-          Lizzie.frame.toolbar.txtAutoPlayTime.setText(
-              Lizzie.config.leelazConfig.getInt("max-game-thinking-time-seconds") + "");
-          Lizzie.frame.toolbar.chkAutoPlayTime.setSelected(true);
+          LizzieFrame.toolbar.txtAutoPlayTime.setText(
+              String.valueOf(Lizzie.config.leelazConfig.getInt("max-game-thinking-time-seconds")));
+          LizzieFrame.toolbar.chkAutoPlayTime.setSelected(true);
         }
         if (playouts > 0) {
-          Lizzie.frame.toolbar.txtAutoPlayPlayouts.setText(playouts + "");
-          Lizzie.frame.toolbar.chkAutoPlayPlayouts.setSelected(true);
-        } else Lizzie.frame.toolbar.chkAutoPlayPlayouts.setSelected(false);
+          LizzieFrame.toolbar.txtAutoPlayPlayouts.setText(String.valueOf(playouts));
+          LizzieFrame.toolbar.chkAutoPlayPlayouts.setSelected(true);
+        } else LizzieFrame.toolbar.chkAutoPlayPlayouts.setSelected(false);
         if (firstPlayouts > 0) {
-          Lizzie.frame.toolbar.txtAutoPlayFirstPlayouts.setText(firstPlayouts + "");
-          Lizzie.frame.toolbar.chkAutoPlayFirstPlayouts.setSelected(true);
-        } else Lizzie.frame.toolbar.chkAutoPlayFirstPlayouts.setSelected(false);
+          LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.setText(String.valueOf(firstPlayouts));
+          LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.setSelected(true);
+        } else LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.setSelected(false);
         if (params[1].equals("black")) {
-          Lizzie.frame.toolbar.chkAutoPlayBlack.setSelected(true);
-          Lizzie.frame.toolbar.chkAutoPlayWhite.setSelected(false);
-          Lizzie.frame.toolbar.chkAutoPlay.setSelected(true);
-          Lizzie.frame.toolbar.chkShowBlack.setSelected(true);
-          Lizzie.frame.toolbar.chkShowWhite.setSelected(true);
+          LizzieFrame.toolbar.chkAutoPlayBlack.setSelected(true);
+          LizzieFrame.toolbar.chkAutoPlayWhite.setSelected(false);
+          LizzieFrame.toolbar.chkAutoPlay.setSelected(true);
+          LizzieFrame.toolbar.chkShowBlack.setSelected(true);
+          LizzieFrame.toolbar.chkShowWhite.setSelected(true);
           Lizzie.config.UsePureNetInGame = false;
           Lizzie.frame.isAnaPlayingAgainstLeelaz = true;
-          Lizzie.frame.toolbar.isAutoPlay = true;
+          LizzieFrame.toolbar.isAutoPlay = true;
+          Lizzie.frame.clearWRNforGame(false);
         } else if (params[1].equals("white")) {
-          Lizzie.frame.toolbar.chkAutoPlayBlack.setSelected(false);
-          Lizzie.frame.toolbar.chkAutoPlayWhite.setSelected(true);
-          Lizzie.frame.toolbar.chkAutoPlay.setSelected(true);
-          Lizzie.frame.toolbar.chkShowBlack.setSelected(true);
-          Lizzie.frame.toolbar.chkShowWhite.setSelected(true);
+          LizzieFrame.toolbar.chkAutoPlayBlack.setSelected(false);
+          LizzieFrame.toolbar.chkAutoPlayWhite.setSelected(true);
+          LizzieFrame.toolbar.chkAutoPlay.setSelected(true);
+          LizzieFrame.toolbar.chkShowBlack.setSelected(true);
+          LizzieFrame.toolbar.chkShowWhite.setSelected(true);
           Lizzie.config.UsePureNetInGame = false;
           Lizzie.frame.isAnaPlayingAgainstLeelaz = true;
-          Lizzie.frame.toolbar.isAutoPlay = true;
+          LizzieFrame.toolbar.isAutoPlay = true;
+          Lizzie.frame.clearWRNforGame(false);
         }
         Lizzie.leelaz.ponder();
       }
     }
     if (line.startsWith("pass")) {
-      Lizzie.board.pass();
+      Lizzie.board.changeNextTurn();
     }
     if (line.startsWith("firstchanged")) {
       String[] params = line.trim().split(" ");
       if (params.length == 2) {
         int firstPlayouts = Integer.parseInt(params[1]);
         if (firstPlayouts > 0) {
-          Lizzie.frame.toolbar.txtAutoPlayFirstPlayouts.setText(firstPlayouts + "");
-          Lizzie.frame.toolbar.chkAutoPlayFirstPlayouts.setSelected(true);
-        } else Lizzie.frame.toolbar.chkAutoPlayFirstPlayouts.setSelected(false);
+          LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.setText(String.valueOf(firstPlayouts));
+          LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.setSelected(true);
+        } else LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.setSelected(false);
       }
     }
     if (line.startsWith("playoutschanged")) {
@@ -368,9 +460,9 @@ public class ReadBoard {
       if (params.length == 2) {
         int playouts = Integer.parseInt(params[1]);
         if (playouts > 0) {
-          Lizzie.frame.toolbar.txtAutoPlayPlayouts.setText(playouts + "");
-          Lizzie.frame.toolbar.chkAutoPlayPlayouts.setSelected(true);
-        } else Lizzie.frame.toolbar.chkAutoPlayPlayouts.setSelected(false);
+          LizzieFrame.toolbar.txtAutoPlayPlayouts.setText(String.valueOf(playouts));
+          LizzieFrame.toolbar.chkAutoPlayPlayouts.setSelected(true);
+        } else LizzieFrame.toolbar.chkAutoPlayPlayouts.setSelected(false);
       }
     }
     if (line.startsWith("timechanged")) {
@@ -378,12 +470,12 @@ public class ReadBoard {
       if (params.length == 2) {
         int time = Integer.parseInt(params[1]);
         if (time > 0) {
-          Lizzie.frame.toolbar.txtAutoPlayTime.setText(time + "");
-          Lizzie.frame.toolbar.chkAutoPlayTime.setSelected(true);
+          LizzieFrame.toolbar.txtAutoPlayTime.setText(String.valueOf(time));
+          LizzieFrame.toolbar.chkAutoPlayTime.setSelected(true);
         } else {
-          Lizzie.frame.toolbar.txtAutoPlayTime.setText(
-              Lizzie.config.leelazConfig.getInt("max-game-thinking-time-seconds") + "");
-          Lizzie.frame.toolbar.chkAutoPlayTime.setSelected(true);
+          LizzieFrame.toolbar.txtAutoPlayTime.setText(
+              String.valueOf(Lizzie.config.leelazConfig.getInt("max-game-thinking-time-seconds")));
+          LizzieFrame.toolbar.chkAutoPlayTime.setSelected(true);
         }
       }
     }
@@ -394,15 +486,14 @@ public class ReadBoard {
         Lizzie.leelaz.isThinking = false;
       }
       if (Lizzie.frame.isAnaPlayingAgainstLeelaz) {
-        Lizzie.frame.isAnaPlayingAgainstLeelaz = false;
-        Lizzie.frame.toolbar.chkAutoPlay.setSelected(false);
-        Lizzie.frame.toolbar.isAutoPlay = false;
-        Lizzie.frame.toolbar.chkAutoPlayBlack.setSelected(false);
-        Lizzie.frame.toolbar.chkAutoPlayWhite.setSelected(false);
-        Lizzie.frame.toolbar.chkShowBlack.setSelected(true);
-        Lizzie.frame.toolbar.chkShowWhite.setSelected(true);
+        Lizzie.frame.stopAiPlayingAndPolicy();
       }
       Lizzie.leelaz.togglePonder();
+    }
+    if (line.startsWith("noinboard")) {
+      if (Lizzie.frame.floatBoard != null && Lizzie.frame.floatBoard.isVisible()) {
+        Lizzie.frame.floatBoard.setVisible(false);
+      }
     }
     if (line.startsWith("inboard")) {
       //	Lizzie.gtpConsole.addLine(line);
@@ -460,12 +551,12 @@ public class ReadBoard {
   }
 
   private void syncBoardStones(boolean isSecondTime) {
-    if (!isSecondTime) {
-      long thisTime = System.currentTimeMillis();
-      if (thisTime - startSyncTime < Lizzie.config.readBoardArg2 / 2) return;
-      startSyncTime = thisTime;
-    }
-    if (tempcount.size() > Lizzie.board.boardWidth * Lizzie.board.boardWidth) {
+    //    if (!this.javaReadBoard && !isSecondTime) {
+    //      long thisTime = System.currentTimeMillis();
+    //      if (thisTime - startSyncTime < Lizzie.config.readBoardArg2 / 2) return;
+    //      startSyncTime = thisTime;
+    //    }
+    if (tempcount.size() > Board.boardWidth * Board.boardHeight) {
       tempcount = new ArrayList<Integer>();
       return;
     }
@@ -480,18 +571,17 @@ public class ReadBoard {
     BoardHistoryNode node = Lizzie.board.getHistory().getCurrentHistoryNode();
     BoardHistoryNode node2 = Lizzie.board.getHistory().getMainEnd();
     Stone[] stones = Lizzie.board.getHistory().getMainEnd().getData().stones;
+
     boolean needRefresh = false;
     for (int i = 0; i < tempcount.size(); i++) {
       int m = tempcount.get(i);
-      int y = i / Lizzie.board.boardWidth;
-      int x = i % Lizzie.board.boardWidth;
-      if (m == 1 && !stones[Lizzie.board.getIndex(x, y)].isBlack()) {
-        if (stones[Lizzie.board.getIndex(x, y)].isWhite()) {
+      int y = i / Board.boardWidth;
+      int x = i % Board.boardWidth;
+      if (((holdLastMove && m == 3) || m == 1) && !stones[Board.getIndex(x, y)].isBlack()) {
+        if (stones[Board.getIndex(x, y)].isWhite()) {
           Lizzie.board.clear(false);
           needReSync = true;
           needRefresh = true;
-          //  Lizzie.frame.refresh();
-          // syncBoardStones();
           break;
         }
         if (!played) {
@@ -506,13 +596,11 @@ public class ReadBoard {
         played = true;
         playedMove = playedMove + 1;
       }
-      if (m == 2 && !stones[Lizzie.board.getIndex(x, y)].isWhite()) {
-        if (stones[Lizzie.board.getIndex(x, y)].isBlack()) {
+      if (((holdLastMove && m == 4) || m == 2) && !stones[Board.getIndex(x, y)].isWhite()) {
+        if (stones[Board.getIndex(x, y)].isBlack()) {
           Lizzie.board.clear(false);
           needReSync = true;
           needRefresh = true;
-          // Lizzie.frame.refresh();
-          // syncBoardStones();
           break;
         }
 
@@ -529,13 +617,11 @@ public class ReadBoard {
         playedMove = playedMove + 1;
       }
 
-      if (m == 3 && !stones[Lizzie.board.getIndex(x, y)].isBlack()) {
-        if (stones[Lizzie.board.getIndex(x, y)].isWhite()) {
+      if (!holdLastMove && m == 3 && !stones[Board.getIndex(x, y)].isBlack()) {
+        if (stones[Board.getIndex(x, y)].isWhite()) {
           Lizzie.board.clear(false);
           needReSync = true;
           needRefresh = true;
-          // Lizzie.frame.refresh();
-          // syncBoardStones();
           break;
         }
         holdLastMove = true;
@@ -543,13 +629,11 @@ public class ReadBoard {
         lastY = y;
         isLastBlack = true;
       }
-      if (m == 4 && !stones[Lizzie.board.getIndex(x, y)].isWhite()) {
-        if (stones[Lizzie.board.getIndex(x, y)].isBlack()) {
+      if (!holdLastMove && m == 4 && !stones[Board.getIndex(x, y)].isWhite()) {
+        if (stones[Board.getIndex(x, y)].isBlack()) {
           Lizzie.board.clear(false);
           needReSync = true;
           needRefresh = true;
-          // Lizzie.frame.refresh();
-          // syncBoardStones();
           break;
         }
         holdLastMove = true;
@@ -558,7 +642,7 @@ public class ReadBoard {
         isLastBlack = false;
       }
     }
-    if (firstSync && played) {
+    if (firstSync) {
       Lizzie.board.hasStartStone = true;
       Lizzie.board.addStartListAll();
       Lizzie.board.flatten();
@@ -578,49 +662,20 @@ public class ReadBoard {
       if (Lizzie.config.alwaysSyncBoardStat || showInBoard) Lizzie.frame.lastMove();
     }
     stones = Lizzie.board.getHistory().getMainEnd().getData().stones;
-    if ((Lizzie.config.alwaysSyncBoardStat && !Lizzie.frame.bothSync) || showInBoard) {
+    if ((Lizzie.config.alwaysSyncBoardStat) || showInBoard) {
       for (int i = 0; i < tempcount.size(); i++) {
         int m = tempcount.get(i);
-        int y = i / Lizzie.board.boardWidth;
-        int x = i % Lizzie.board.boardWidth;
-        if (m == 0 && stones[Lizzie.board.getIndex(x, y)] != Stone.EMPTY) {
-          // Lizzie.board.clear(false);
-          //  needRefresh = true;
-          needReSync = true;
-          break;
-        }
-
-        if (m == 1 && !stones[Lizzie.board.getIndex(x, y)].isBlack()) {
-          //  Lizzie.board.clear(false);
-          //   needRefresh = true;
-          needReSync = true;
-          break;
-        }
-        if (m == 2 && !stones[Lizzie.board.getIndex(x, y)].isWhite()) {
-          // Lizzie.board.clear(false);
-          //  needRefresh = true;
-          needReSync = true;
-          break;
-        }
-        if (m == 3 && !stones[Lizzie.board.getIndex(x, y)].isBlack()) {
-          // Lizzie.board.clear(false);
-          //  needRefresh = true;
-          needReSync = true;
-          break;
-        }
-        if (m == 4 && !stones[Lizzie.board.getIndex(x, y)].isWhite()) {
-          //  Lizzie.board.clear(false);
-          //  needRefresh = true;
+        int y = i / Board.boardWidth;
+        int x = i % Board.boardWidth;
+        if (isStoneDiff(m, stones, x, y)) {
           needReSync = true;
           break;
         }
       }
-      //
     }
     if (!Lizzie.frame.bothSync && !needReSync) {
       if (played
           && !Lizzie.config.alwaysGotoLastOnLive
-          && !Lizzie.config.alwaysSyncBoardStat
           && !showInBoard
           && Lizzie.board.getHistory().getCurrentHistoryNode().previous().isPresent()
           && node != node2) {
@@ -664,35 +719,47 @@ public class ReadBoard {
     //	    }
   }
 
+  private boolean isStoneDiff(int m, Stone[] stones, int x, int y) {
+    // TODO Auto-generated method stub
+    Stone stone = stones[Board.getIndex(x, y)];
+    if (m == 0 && stone != Stone.EMPTY) {
+      if (Lizzie.frame.bothSync && lastMovePlayByLizzie) {
+        BoardHistoryNode curNode = Lizzie.board.getHistory().getMainEnd();
+        if (curNode.getData().lastMove.isPresent()) {
+          int[] lastCoords = curNode.getData().lastMove.get();
+          if (lastCoords[0] == x && lastCoords[1] == y) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    if ((m == 1 || m == 3) && !stone.isBlack()) {
+      return true;
+    }
+    if ((m == 2 || m == 4) && !stone.isWhite()) {
+      return true;
+    }
+    return false;
+  }
+
   public void shutdown() {
     noMsg = true;
     Lizzie.frame.syncBoard = false;
     Lizzie.frame.bothSync = false;
     this.sendCommand("quit");
-    if (!usePipe) {
+    if (usePipe) {
       try {
         s.close();
         socket.close();
       } catch (Exception e) {
       }
-    } else {
-      new Thread() {
-        public void run() {
-          try {
-            Thread.sleep(500);
-          } catch (InterruptedException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-          }
-          if (process != null && process.isAlive()) process.destroy();
-        }
-      }.start();
     }
   }
 
   public void sendCommandTo(String command) {
     // if (Lizzie.gtpConsole.isVisible() || Lizzie.config.alwaysGtp)
-    //   Lizzie.gtpConsole.addReadBoardCommand(command);
+    // Lizzie.gtpConsole.addReadBoardCommand(command);
     try {
       outputStream.write((command + "\n").getBytes());
       outputStream.flush();
@@ -702,7 +769,10 @@ public class ReadBoard {
   }
 
   public void sendCommand(String command) {
-    if (command.startsWith("place") && Lizzie.frame.isPlayingAgainstLeelaz) needGenmove = true;
+    if (command.startsWith("place")) {
+      lastMovePlayByLizzie = true;
+      if (Lizzie.frame.isPlayingAgainstLeelaz) needGenmove = true;
+    }
     if (usePipe) {
       sendCommandTo(command);
     } else if (readBoardStream != null) readBoardStream.sendCommand(command);
@@ -710,26 +780,12 @@ public class ReadBoard {
 
   public void sendLossFocus() {
     // TODO Auto-generated method stub
+    if (!Lizzie.config.readBoardGetFocus) return;
     sendCommand("loss");
   }
 
   public void checkVersion() {
     sendCommand("version");
-    new Thread() {
-      public void run() {
-        try {
-          Thread.sleep(2000);
-        } catch (InterruptedException e1) {
-          // TODO Auto-generated catch block
-          e1.printStackTrace();
-        }
-        if (!checkedVersionSucceed) {
-          SMessage msg = new SMessage();
-          msg.setMessage(resourceBundle.getString("ReadBoard.versionCheckFaied"), 2);
-          shutdown();
-        }
-      }
-    }.start();
   }
 
   // public void sendStopInBoard() {

@@ -1,19 +1,24 @@
 package featurecat.lizzie.gui;
 
+import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
 import featurecat.lizzie.rules.BoardHistoryNode;
+import featurecat.lizzie.util.Utils;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Optional;
 
 public class VariationTree {
 
-  private int YSPACING;
-  private int XSPACING;
+  private int YSPACING = 20;
+  private int XSPACING = 20;
   private int DOT_DIAM = 11; // Should be odd number
   private int CENTER_DIAM = 5;
   private int RING_DIAM = 15;
   private int diam = DOT_DIAM;
+  private int rectBorder = 2;
+  private int rect_DIAM = 4;
+  private boolean isLargeScaled = Config.isScaled && Lizzie.javaScaleFactor >= 1.5;
 
   private ArrayList<Integer> laneUsageList;
   private BoardHistoryNode curMove;
@@ -24,6 +29,16 @@ public class VariationTree {
     laneUsageList = new ArrayList<Integer>();
     area = new Rectangle(0, 0, 0, 0);
     clickPoint = new Point(0, 0);
+    if (isLargeScaled) {
+      YSPACING = 30;
+      XSPACING = 30;
+      DOT_DIAM = 16; // Should be odd number
+      CENTER_DIAM = 8;
+      RING_DIAM = 23;
+      diam = DOT_DIAM;
+      rectBorder = 3;
+      rect_DIAM = 6;
+    }
   }
 
   public Optional<BoardHistoryNode> drawTree(
@@ -142,7 +157,7 @@ public class VariationTree {
           else g.fillOval(curposx + diff, posy + diff, diam, diam);
         }
         if (Lizzie.config.showVarMove) {
-          g.setFont(new Font(Lizzie.config.uiFontName, Font.PLAIN, 9));
+          g.setFont(new Font(Lizzie.config.uiFontName, Font.PLAIN, isLargeScaled ? 12 : 9));
           g.setColor(Color.WHITE);
           int moveNum = cur.getData().moveMNNumber;
           if (moveNum < 0) {
@@ -155,20 +170,22 @@ public class VariationTree {
             }
             moveNum = moveNum + num;
           }
-          if (moveNum < 10) g.drawString(moveNum + "", curposx + 3, posy + diff - 5);
-          else g.drawString(moveNum + "", moveNum >= 100 ? curposx - 3 : curposx, posy + diff - 5);
+          if (moveNum < 10) g.drawString(String.valueOf(moveNum), curposx + 3, posy + diff - 5);
+          else
+            g.drawString(
+                String.valueOf(moveNum), moveNum >= 100 ? curposx - 3 : curposx, posy + diff - 5);
         }
         if (startNode == Lizzie.board.getHistory().getCurrentHistoryNode()) {
-          if (blunderColor != Color.WHITE) g.setColor(reverseColor(blunderColor));
-          else g.setColor(Color.RED);
+          //    if (blunderColor != Color.WHITE) g.setColor(reverseColor(blunderColor));
+          //   else
+          g.setColor(Color.BLACK);
           g.fillOval(
-              curposx + (DOT_DIAM + diff - CENTER_DIAM) / 2 - 1,
-              posy + (DOT_DIAM + diff - CENTER_DIAM) / 2 - 1,
-              CENTER_DIAM + 2,
-              CENTER_DIAM + 2);
+              curposx + (DOT_DIAM + diff - CENTER_DIAM) / 2,
+              posy + (DOT_DIAM + diff - CENTER_DIAM) / 2,
+              CENTER_DIAM,
+              CENTER_DIAM);
           Lizzie.frame.varTreeCurX = curposx;
-          Lizzie.frame.varTreeCurY = posy - (DOT_DIAM + diff);
-
+          Lizzie.frame.varTreeCurY = posy;
           Lizzie.frame.tree_curposx = curposx;
           Lizzie.frame.tree_posy = posy;
           Lizzie.frame.tree_DOT_DIAM = DOT_DIAM;
@@ -184,11 +201,14 @@ public class VariationTree {
         g.drawRect(curposx - 1, posy - 1, DOT_DIAM + 1, DOT_DIAM + 1);
         if (cur == Lizzie.board.getHistory().getCurrentHistoryNode()) {
           g.setColor(Color.RED);
-          g.fillRect(curposx + 2, posy + 2, DOT_DIAM - 4, DOT_DIAM - 4);
+          g.fillRect(
+              curposx + rectBorder, posy + rectBorder, DOT_DIAM - rect_DIAM, DOT_DIAM - rect_DIAM);
         }
       }
-      if (curposx + 60 > Lizzie.frame.varTreeMaxX) Lizzie.frame.varTreeMaxX = curposx + 60;
-      if (posy + 60 > Lizzie.frame.varTreeMaxY) Lizzie.frame.varTreeMaxY = posy + 60;
+      if (curposx + Utils.zoomOut(60) > Lizzie.frame.varTreeMaxX)
+        Lizzie.frame.varTreeMaxX = curposx + Utils.zoomOut(60);
+      if (posy + Utils.zoomOut(60) > Lizzie.frame.varTreeMaxY)
+        Lizzie.frame.varTreeMaxY = posy + Utils.zoomOut(60);
       //   }
       g.setColor(curcolor);
     }
@@ -198,7 +218,6 @@ public class VariationTree {
       posy += YSPACING;
       cur = cur.next(true).get();
       if (cur.isCurTrunk()) curcolor = Color.WHITE;
-      // else curcolor = reverseColor(Lizzie.config.varPanelColor).brighter();
       else curcolor = new Color(103, 103, 103);
       if (cur.isEndDummay()) {
         continue;
@@ -239,13 +258,14 @@ public class VariationTree {
           else g.fillOval(curposx + diff, posy + diff, diam, diam);
         }
         if (cur == Lizzie.board.getHistory().getCurrentHistoryNode()) {
-          if (blunderColor != Color.WHITE) g.setColor(reverseColor(blunderColor));
-          else g.setColor(Color.RED);
+          // if (blunderColor != Color.WHITE) g.setColor(reverseColor(blunderColor));
+          // else
+          g.setColor(Color.BLACK);
           g.fillOval(
-              curposx + (DOT_DIAM + diff - CENTER_DIAM) / 2 - 1,
-              posy + (DOT_DIAM + diff - CENTER_DIAM) / 2 - 1,
-              CENTER_DIAM + 2,
-              CENTER_DIAM + 2);
+              curposx + (DOT_DIAM + diff - CENTER_DIAM) / 2,
+              posy + (DOT_DIAM + diff - CENTER_DIAM) / 2,
+              CENTER_DIAM,
+              CENTER_DIAM);
           Lizzie.frame.varTreeCurX = curposx;
           Lizzie.frame.varTreeCurY = posy;
           Lizzie.frame.tree_curposx = curposx;
@@ -263,7 +283,7 @@ public class VariationTree {
             curposx + dotoffset,
             posy - YSPACING + dotoffset + (diff > 0 ? dotoffset + 1 : dotoffsety) + 1);
         if (Lizzie.config.showVarMove) {
-          g.setFont(new Font(Lizzie.config.uiFontName, Font.PLAIN, 9));
+          g.setFont(new Font(Lizzie.config.uiFontName, Font.PLAIN, isLargeScaled ? 12 : 9));
           g.setColor(Color.WHITE);
           int moveNum = lane == 0 ? cur.getData().moveNumber : cur.getData().moveMNNumber;
           if (moveNum < 0) {
@@ -276,13 +296,17 @@ public class VariationTree {
             }
             moveNum = moveNum + num;
           }
-          if (moveNum < 10) g.drawString(moveNum + "", curposx - 7, posy + diff - 1);
+          if (moveNum < 10) g.drawString(String.valueOf(moveNum), curposx - 7, posy + diff - 1);
           else
             g.drawString(
-                moveNum + "", moveNum >= 100 ? curposx - 13 : curposx - 10, posy + diff - 1);
+                String.valueOf(moveNum),
+                moveNum >= 100 ? curposx - 13 : curposx - 10,
+                posy + diff - 1);
         }
-        if (curposx + 60 > Lizzie.frame.varTreeMaxX) Lizzie.frame.varTreeMaxX = curposx + 60;
-        if (posy + 60 > Lizzie.frame.varTreeMaxY) Lizzie.frame.varTreeMaxY = posy + 60;
+        if (curposx + Utils.zoomOut(60) > Lizzie.frame.varTreeMaxX)
+          Lizzie.frame.varTreeMaxX = curposx + Utils.zoomOut(60);
+        if (posy + Utils.zoomOut(60) > Lizzie.frame.varTreeMaxY)
+          Lizzie.frame.varTreeMaxY = posy + Utils.zoomOut(60);
         //        if(posy>Lizzie.frame.varTreeMaxY)
         //            Lizzie.frame.varTreeMaxY=posy;
         //        if(curposx<Lizzie.frame.varTreeMinX)
@@ -331,22 +355,19 @@ public class VariationTree {
     if (width <= 0 || height <= 0) {
       return Optional.empty(); // we don't have enough space
     }
-    // Use dense tree for saving space if large-subboard
-    YSPACING = 20; // (Lizzie.config.showLargeSubBoard() ? 20 : 30);
-    XSPACING = YSPACING;
-
     // int strokeRadius = Lizzie.config.showBorder ? 2 : 0;
-    if (!calc) {
-      // Draw background
-      area.setBounds(posx, posy, width, height);
-      if (Lizzie.config.usePureBackground) g.setColor(Lizzie.config.pureBackgroundColor);
-      else g.setPaint(Lizzie.frame.backgroundPaint);
-      g.fillRect(posx, posy, width, height);
-
-      g.setColor(new Color(0, 0, 0, 130));
-      g.fillRect(posx, posy, width, height);
-      g.setStroke(new BasicStroke(1));
-    }
+    if (!calc) area.setBounds(posx, posy, width, height);
+    //   {
+    //      // Draw background
+    area.setBounds(posx, posy, width, height);
+    //      if (Lizzie.config.usePureBackground) g.setColor(Lizzie.config.pureBackgroundColor);
+    //      else g.setPaint(Lizzie.frame.backgroundPaint);
+    //      g.fillRect(posx, posy, width, height);
+    //
+    //      g.setColor(new Color(0, 0, 0, 130));
+    //      g.fillRect(posx, posy, width, height);
+    //      g.setStroke(new BasicStroke(1));
+    //    }
 
     int middleY = 20; // posy + height / 2;
     int xoffset = 20;
@@ -469,17 +490,17 @@ public class VariationTree {
     }
   }
 
-  private Color reverseColor(Color color) {
-    // System.out.println("color=="+color);
-    int r = color.getRed();
-    int g = color.getGreen();
-    int b = color.getBlue();
-    int r_ = 255 - r;
-    int g_ = 255 - g;
-    int b_ = 255 - b;
-    Color newColor = new Color(r_, g_, b_);
-    return newColor;
-  }
+  //  private Color reverseColor(Color color) {
+  //    // System.out.println("color=="+color);
+  //    int r = color.getRed();
+  //    int g = color.getGreen();
+  //    int b = color.getBlue();
+  //    int r_ = 255 - r;
+  //    int g_ = 255 - g;
+  //    int b_ = 255 - b;
+  //    Color newColor = new Color(r_, g_, b_);
+  //    return newColor;
+  //  }
 
   private int getCurLane(
       BoardHistoryNode start,

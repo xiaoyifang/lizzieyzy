@@ -3,6 +3,7 @@ package featurecat.lizzie.gui;
 import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
 import java.awt.Font;
+import java.awt.Window;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -27,7 +28,7 @@ public class Message extends JDialog {
     setAlwaysOnTop(true);
     //  setLocationByPlatform(true);
     lblmessage = new JLabel("", JLabel.CENTER);
-    lblmessage.setFont(new Font("", Font.PLAIN, Config.frameFontSize));
+    lblmessage.setFont(new Font(Config.sysDefaultFontName, Font.PLAIN, Config.frameFontSize));
     this.add(lblmessage);
     try {
       this.setIconImage(ImageIO.read(MoreEngines.class.getResourceAsStream("/assets/logo.png")));
@@ -39,14 +40,11 @@ public class Message extends JDialog {
   public void setMessage(String message) {
     String regex = "[\u4e00-\u9fa5]";
     lblmessage.setText(message);
-    setSize(
-        (int) (message.replaceAll(regex, "12").length() * (Lizzie.config.frameFontSize / 1.6)), 80);
-    setLocationRelativeTo(null);
+    setSize((int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
     setVisible(true);
     Lizzie.setFrameSize(
-        this,
-        (int) (message.replaceAll(regex, "12").length() * (Lizzie.config.frameFontSize / 1.6)),
-        80);
+        this, (int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
     this.setModal(true);
     setVisible(false);
     setVisible(true);
@@ -55,14 +53,11 @@ public class Message extends JDialog {
   public void setMessageNoModal(String message) {
     String regex = "[\u4e00-\u9fa5]";
     lblmessage.setText(message);
-    setSize(
-        (int) (message.replaceAll(regex, "12").length() * (Lizzie.config.frameFontSize / 1.6)), 80);
-    setLocationRelativeTo(null);
+    setSize((int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
     setVisible(true);
     Lizzie.setFrameSize(
-        this,
-        (int) (message.replaceAll(regex, "12").length() * (Lizzie.config.frameFontSize / 1.6)),
-        80);
+        this, (int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
     setVisible(false);
     setVisible(true);
   }
@@ -70,14 +65,11 @@ public class Message extends JDialog {
   public void setMessageNoModal(String message, int seconds) {
     String regex = "[\u4e00-\u9fa5]";
     lblmessage.setText(message);
-    setSize(
-        (int) (message.replaceAll(regex, "12").length() * (Lizzie.config.frameFontSize / 1.6)), 80);
-    setLocationRelativeTo(null);
+    setSize((int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
     setVisible(true);
     Lizzie.setFrameSize(
-        this,
-        (int) (message.replaceAll(regex, "12").length() * (Lizzie.config.frameFontSize / 1.6)),
-        80);
+        this, (int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
     setVisible(false);
     setVisible(true);
 
@@ -95,5 +87,18 @@ public class Message extends JDialog {
         };
     Thread closeTh = new Thread(runnable);
     closeTh.start();
+  }
+
+  public void setMessage(String message, Window owner) {
+    // TODO Auto-generated method stub
+    String regex = "[\u4e00-\u9fa5]";
+    lblmessage.setText(message);
+    setSize((int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
+    setLocationRelativeTo(owner);
+    setVisible(true);
+    Lizzie.setFrameSize(
+        this, (int) (message.replaceAll(regex, "12").length() * (Config.frameFontSize / 1.6)), 80);
+    setVisible(false);
+    setVisible(true);
   }
 }

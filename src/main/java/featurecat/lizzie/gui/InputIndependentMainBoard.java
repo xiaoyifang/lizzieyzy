@@ -107,9 +107,9 @@ public class InputIndependentMainBoard implements KeyListener {
     return e.isControlDown() || (mac && e.isMetaDown());
   }
 
-  private void toggleShowDynamicKomi() {
-    Lizzie.config.showDynamicKomi = !Lizzie.config.showDynamicKomi;
-  }
+  //  private void toggleShowDynamicKomi() {
+  //    Lizzie.config.showDynamicKomi = !Lizzie.config.showDynamicKomi;
+  //  }
 
   @Override
   public void keyPressed(KeyEvent e) {
@@ -181,7 +181,7 @@ public class InputIndependentMainBoard implements KeyListener {
         break;
 
       case VK_PAGE_DOWN:
-        if (Lizzie.frame.boardRenderer.isShowingBranch()) {
+        if (LizzieFrame.boardRenderer.isShowingBranch()) {
           Lizzie.frame.doBranch(1);
         } else {
           // Lizzie.frame.noautocounting();
@@ -210,14 +210,10 @@ public class InputIndependentMainBoard implements KeyListener {
         }
         break;
       case VK_N:
-        // stop the ponder
-        // if (isinsertmode) {
-        // return;
-        // }
-        if (e.isAltDown() || Lizzie.leelaz.noAnalyze) {
-          Lizzie.frame.startNewGame();
-        } else {
+        if (e.isAltDown() && !Lizzie.leelaz.noAnalyze) {
           Lizzie.frame.startAnalyzeGameDialog();
+        } else {
+          Lizzie.frame.startNewGame();
         }
         break;
       case VK_SPACE:
@@ -236,7 +232,9 @@ public class InputIndependentMainBoard implements KeyListener {
         break;
 
       case VK_COMMA:
-        if (!Lizzie.config.showSuggestionVariations) {
+        if (e.isAltDown()) {
+          Lizzie.frame.genmove();
+        } else if (!Lizzie.config.showSuggestionVariations) {
           if (Lizzie.frame.isMouseOver) Lizzie.frame.playCurrentVariation();
           else Lizzie.frame.playBestMove();
         } else {
@@ -246,12 +244,9 @@ public class InputIndependentMainBoard implements KeyListener {
 
       case VK_M:
         if (controlIsPressed(e)) {
-          Lizzie.frame.openChangeMoveDialog();
-        } else if (e.isAltDown()) {
-          // if (isinsertmode) {
-          // return;
-          // }
           Lizzie.config.toggleShowMoveAllInBranch();
+        } else if (e.isAltDown()) {
+          Lizzie.config.toggleShowMoveRankMark();
         } else {
           Lizzie.config.toggleShowMoveNumber();
         }
@@ -266,22 +261,22 @@ public class InputIndependentMainBoard implements KeyListener {
           Lizzie.config.toggleShowSuggestionVariations();
         } else {
           if (controlIsPressed(e)) Lizzie.config.toggleLargeSubBoard();
-          else if (e.isAltDown()) {
-            if (Lizzie.frame.toolbar.chkShowBlack.isSelected()
-                || Lizzie.frame.toolbar.chkShowBlack.isSelected()) {
-              Lizzie.frame.toolbar.chkShowBlack.setSelected(false);
-              Lizzie.frame.toolbar.chkShowWhite.setSelected(false);
+          else {
+            if (LizzieFrame.toolbar.chkShowBlack.isSelected()
+                || LizzieFrame.toolbar.chkShowBlack.isSelected()) {
+              LizzieFrame.toolbar.chkShowBlack.setSelected(false);
+              LizzieFrame.toolbar.chkShowWhite.setSelected(false);
               if (Lizzie.config.showDoubleMenu) {
-                Lizzie.frame.menu.chkShowBlack.setSelected(false);
-                Lizzie.frame.menu.chkShowWhite.setSelected(false);
+                LizzieFrame.menu.chkShowBlack.setSelected(false);
+                LizzieFrame.menu.chkShowWhite.setSelected(false);
               }
-              Lizzie.frame.boardRenderer.clearAfterMove();
+              LizzieFrame.boardRenderer.clearAfterMove();
             } else {
-              Lizzie.frame.toolbar.chkShowBlack.setSelected(true);
-              Lizzie.frame.toolbar.chkShowWhite.setSelected(true);
+              LizzieFrame.toolbar.chkShowBlack.setSelected(true);
+              LizzieFrame.toolbar.chkShowWhite.setSelected(true);
               if (Lizzie.config.showDoubleMenu) {
-                Lizzie.frame.menu.chkShowBlack.setSelected(true);
-                Lizzie.frame.menu.chkShowWhite.setSelected(true);
+                LizzieFrame.menu.chkShowBlack.setSelected(true);
+                LizzieFrame.menu.chkShowWhite.setSelected(true);
               }
             }
           }
@@ -301,7 +296,7 @@ public class InputIndependentMainBoard implements KeyListener {
         break;
 
       case VK_PAGE_UP:
-        if (Lizzie.frame.boardRenderer.isShowingBranch()) {
+        if (LizzieFrame.boardRenderer.isShowingBranch()) {
           Lizzie.frame.doBranch(-1);
         } else {
           // Lizzie.frame.noautocounting();
@@ -315,14 +310,14 @@ public class InputIndependentMainBoard implements KeyListener {
         if (e.isControlDown()) {
           SetBoardSize st = new SetBoardSize();
           st.setVisible(true);
-        } else Lizzie.frame.editGameInfo();
+        } else LizzieFrame.editGameInfo();
         break;
 
       case VK_S:
         if (e.isControlDown() && e.isShiftDown()) {
-          Lizzie.frame.saveFile(true);
+          LizzieFrame.saveFile(true);
         } else if (e.isControlDown() && e.isAltDown()) {
-          Lizzie.frame.saveCurrentBranch();
+          LizzieFrame.saveCurrentBranch();
         } else if (e.isShiftDown()) {
           Lizzie.frame.saveImage(
               Lizzie.frame.statx,
@@ -377,7 +372,7 @@ public class InputIndependentMainBoard implements KeyListener {
         // return;
         // }
         if (controlIsPressed(e)) {
-          Lizzie.board.clearManually();
+          Lizzie.board.clear(false);
           if (Lizzie.leelaz.isPondering()) {
             Lizzie.leelaz.ponder();
           }
@@ -434,6 +429,7 @@ public class InputIndependentMainBoard implements KeyListener {
         if (e.isAltDown()) {
           Lizzie.config.toggleShowListPane();
         } else if (e.isShiftDown()) Lizzie.config.toggleShowVariationGraph();
+        else Lizzie.frame.tryToRefreshVariation();
         break;
 
       case VK_T:
@@ -467,13 +463,10 @@ public class InputIndependentMainBoard implements KeyListener {
         break;
 
       case VK_ENTER:
-        // if (isinsertmode) {
-        // return;
-        // }
         if (e.isAltDown()) {
-          Lizzie.frame.continueAiPlaying(true, true, true, true);
-        } else {
           Lizzie.frame.continueAiPlaying(false, true, true, true);
+        } else {
+          Lizzie.frame.continueAiPlaying(true, true, true, true);
         }
         break;
 
@@ -530,10 +523,10 @@ public class InputIndependentMainBoard implements KeyListener {
           //  Lizzie.board.clearbestmovesafter(Lizzie.board.getHistory().getStart());
           Lizzie.board.clearBoardStat();
         } else {
-          StartAnaDialog newgame = new StartAnaDialog(false);
+          StartAnaDialog newgame = new StartAnaDialog(false, Lizzie.frame);
           newgame.setVisible(true);
           if (newgame.isCancelled()) {
-            Lizzie.frame.toolbar.resetAutoAna();
+            LizzieFrame.toolbar.resetAutoAna();
           }
         }
         break;
@@ -541,10 +534,10 @@ public class InputIndependentMainBoard implements KeyListener {
       case VK_DECIMAL:
       case VK_SLASH:
         if (Lizzie.frame.isCounting) {
-          Lizzie.frame.boardRenderer.removecountblock();
+          LizzieFrame.boardRenderer.removecountblock();
           // Lizzie.frame.repaint();
           Lizzie.frame.isCounting = false;
-          Lizzie.estimateResults.setVisible(false);
+          Lizzie.frame.estimateResults.setVisible(false);
         } else {
           Lizzie.frame.countstones(true);
         }
@@ -646,8 +639,6 @@ public class InputIndependentMainBoard implements KeyListener {
 
     Lizzie.frame.refresh();
   }
-
-  private boolean wasPonderingWhenControlsShown = false;
 
   @Override
   public void keyReleased(KeyEvent e) {

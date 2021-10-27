@@ -1,5 +1,6 @@
 package featurecat.lizzie.gui;
 
+import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -107,15 +108,14 @@ public class JPaintTextPane extends JTextPane implements MouseListener {
             Font.PLAIN,
             Lizzie.config.commentFontSize > 0
                 ? Lizzie.config.commentFontSize
-                : Lizzie.config.frameFontSize));
+                : Config.frameFontSize));
     this.setEditorKit(new WarpEditorKit());
   }
 
   protected void paintComponent(Graphics g) {
-    Graphics2D g1 = (Graphics2D) g;
-    if (Lizzie.config.usePureBackground) g1.setColor(Lizzie.config.pureBackgroundColor);
-    else g1.setPaint(Lizzie.frame.backgroundPaint);
-    g1.fillRect(0, 0, getWidth(), getHeight());
+    if (Lizzie.config.usePureBackground) g.setColor(Lizzie.config.pureBackgroundColor);
+    else ((Graphics2D) g).setPaint(Lizzie.frame.backgroundPaint);
+    g.fillRect(0, 0, getWidth(), getHeight());
     super.paintComponent(g);
   }
 

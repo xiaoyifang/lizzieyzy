@@ -2,6 +2,7 @@ package featurecat.lizzie.gui;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
+import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
 import featurecat.lizzie.analysis.MoveData;
 import featurecat.lizzie.rules.Board;
@@ -20,7 +21,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
@@ -38,10 +38,10 @@ public class FloatBoard extends JDialog {
   private static final long serialVersionUID = 1L;
 
   //  private boolean isLocked;
-  public static boolean isMouseOver = false;
+  private boolean isMouseOver = false;
   private boolean isReplayVariation = false;
   // private JButton lockUnlock;
-  public int[] mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
+  public int[] mouseOverCoordinate = LizzieFrame.outOfBoundCoordinate;
   public Optional<List<String>> variationOpt;
   private int curSuggestionMoveOrderByNumber = -1;
   public int selectCoordsX1;
@@ -77,13 +77,14 @@ public class FloatBoard extends JDialog {
   private int tempX, tempY, tempWidth, tempHeight;
   private boolean showPosBtn = false;
 
+  @SuppressWarnings("deprecation")
   public FloatBoard(int x, int y, int width, int height, int boardType, boolean isScaled) {
     tempX = x;
     tempY = y;
     tempWidth = width;
     tempHeight = height;
     this.boardType = boardType;
-    if (boardType > 2) showPosBtn = true;
+    // if (boardType > 2) showPosBtn = true;
     this.isScaled = isScaled;
     x = x - Utils.zoomIn(20) + extraX;
     y = y - Utils.zoomIn(20) + extraY;
@@ -93,7 +94,7 @@ public class FloatBoard extends JDialog {
     posY = y;
     posWidth = width;
     posHeight = height;
-    setTitle(Lizzie.resourceBundle.getString("IndependentMainBoard.title"));
+    setTitle("FloatBoard");
     setAlwaysOnTop(true);
     try {
       this.setIconImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/logo.png")));
@@ -109,8 +110,12 @@ public class FloatBoard extends JDialog {
         new JPanel(true) {
           @Override
           protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
+            // super.paintComponent(g);
             ((Graphics2D) g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
+            if (Config.isScaled) {
+              Graphics2D g1 = (Graphics2D) g;
+              g1.scale(1.0 / Lizzie.javaScaleFactor, 1.0 / Lizzie.javaScaleFactor);
+            }
             paintMianPanel(g);
           }
         };
@@ -165,7 +170,7 @@ public class FloatBoard extends JDialog {
             hideSuggestion = !hideSuggestion;
             if (hideSuggestion) btnHideShow.setIcon(plus);
             else btnHideShow.setIcon(minus);
-            refresh();
+            refreshByLis();
           }
         });
     btnHideShow.setFocusable(false);
@@ -272,7 +277,7 @@ public class FloatBoard extends JDialog {
               if (Lizzie.frame.isCounting) {
                 Lizzie.frame.clearKataEstimate();
                 Lizzie.frame.isCounting = false;
-                Lizzie.estimateResults.setVisible(false);
+                Lizzie.frame.estimateResults.setVisible(false);
               } else {
                 Lizzie.frame.countstones(true);
               }
@@ -285,13 +290,16 @@ public class FloatBoard extends JDialog {
               if (boardRenderer.isShowingBranch()) {
                 doBranch(-1);
               }
-              refresh();
+              refreshByLis();
             }
             if (e.getKeyCode() == KeyEvent.VK_DOWN) {
               if (boardRenderer.isShowingBranch()) {
                 doBranch(1);
               }
-              refresh();
+              refreshByLis();
+            }
+            if (e.getKeyCode() == KeyEvent.VK_G) {
+              tryToRefreshVariation();
             }
           }
         });
@@ -314,7 +322,7 @@ public class FloatBoard extends JDialog {
             mouseOverCoordinate = LizzieFrame.outOfBoundCoordinate;
             isMouseOver = false;
             clearMoved();
-            refresh();
+            refreshByLis();
           }
         });
 
@@ -332,7 +340,7 @@ public class FloatBoard extends JDialog {
                 doBranch(-1);
               } else boardRenderer.incrementDisplayedBranchLength(-1);
             }
-            refresh();
+            refreshByLis();
           }
         });
 
@@ -354,7 +362,8 @@ public class FloatBoard extends JDialog {
               }
               if (isCoordsChanged) {
                 boolean isCurMouseOver = false;
-                List<MoveData> bestMoves = Lizzie.frame.getBestMoves();
+                List<MoveData> bestMoves =
+                    Lizzie.board.getHistory().getMainEnd().getData().bestMoves;
                 if (!bestMoves.isEmpty())
                   for (int i = 0; i < bestMoves.size(); i++) {
                     Optional<int[]> bestCoords = Board.asCoordinates(bestMoves.get(i).coordinate);
@@ -366,7 +375,6 @@ public class FloatBoard extends JDialog {
                     }
                   }
                 if (isCurMouseOver) {
-                  if (!isMouseOver) Lizzie.frame.readBoard.sendLossFocus();
                   clearMoved();
                   needRepaint = true;
                   isMouseOver = true;
@@ -392,9 +400,13 @@ public class FloatBoard extends JDialog {
                 isMouseOver = false;
               }
             }
-            if (needRepaint) refresh();
+            if (needRepaint) refreshByLis();
           }
         });
+  }
+
+  private void tryToRefreshVariation() {
+    boardRenderer.refreshVariation();
   }
 
   protected void reSetPos() {
@@ -403,6 +415,7 @@ public class FloatBoard extends JDialog {
   }
 
   private void doBranch(int moveTo) {
+    Lizzie.frame.readBoard.sendLossFocus();
     if (moveTo > 0) {
       if (boardRenderer.isShowingNormalBoard()) {
         setDisplayedBranchLength(2);
@@ -438,26 +451,12 @@ public class FloatBoard extends JDialog {
     // TODO Auto-generated method stub
     if (!hideSuggestion) {
       Graphics2D g0 = (Graphics2D) cachedImage.getGraphics();
-      // g0.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
       boardRenderer.setLocation(Utils.zoomIn(20), Utils.zoomIn(20));
       boardRenderer.setBoardLength(posWidth - Utils.zoomIn(40), posHeight - Utils.zoomIn(40));
-      boardRenderer.setupSizeParameters();
       boardRenderer.draw(g0);
       g0.dispose();
     }
-    //   g.drawImage(cachedImage, 0, 0, null);
-    if (Lizzie.config.isScaled) {
-      Graphics2D g1 = (Graphics2D) g;
-      final AffineTransform t = g1.getTransform();
-      t.setToScale(1, 1);
-      g1.setTransform(t);
-      // g1.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-      // g1.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-      g1.drawImage(cachedImage, 0, 0, null);
-      //  if (!hideSuggestion) boardRenderer.drawSuggestion(g1);
-    } else g.drawImage(cachedImage, 0, 0, null);
-    // g0.dispose();
+    g.drawImage(cachedImage, 0, 0, null);
   }
 
   private void setDisplayedBranchLength(int n) {
@@ -465,6 +464,10 @@ public class FloatBoard extends JDialog {
   }
 
   public void refresh() {
+    mainPanel.repaint();
+  }
+
+  private void refreshByLis() {
     mainPanel.repaint();
   }
 
@@ -514,12 +517,12 @@ public class FloatBoard extends JDialog {
     if (index >= bestMoves.size()) return;
     if (curSuggestionMoveOrderByNumber == index) {
       curSuggestionMoveOrderByNumber = -1;
-      mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
+      mouseOverCoordinate = LizzieFrame.outOfBoundCoordinate;
       return;
     }
     curSuggestionMoveOrderByNumber = index;
     mouseOverCoordinate =
-        Lizzie.board.convertNameToCoordinates(
+        Board.convertNameToCoordinates(
             Lizzie.board.getHistory().getData().bestMoves.get(index).coordinate);
   }
 
@@ -531,7 +534,7 @@ public class FloatBoard extends JDialog {
   public boolean isMouseOverSuggestions() {
     List<MoveData> bestMoves = Lizzie.board.getHistory().getData().bestMoves;
     for (int i = 0; i < bestMoves.size(); i++) {
-      Optional<int[]> c = Lizzie.board.asCoordinates(bestMoves.get(i).coordinate);
+      Optional<int[]> c = Board.asCoordinates(bestMoves.get(i).coordinate);
       if (c.isPresent()) {
         if (isMouseOver2(c.get()[0], c.get()[1])) {
           List<String> variation = bestMoves.get(i).variation;
@@ -627,8 +630,8 @@ public class FloatBoard extends JDialog {
   }
 
   public boolean isMouseOver(int x, int y) {
-    if (!Lizzie.frame.toolbar.chkShowBlack.isSelected()
-        && !Lizzie.frame.toolbar.chkShowBlack.isSelected()) {
+    if (!LizzieFrame.toolbar.chkShowBlack.isSelected()
+        && !LizzieFrame.toolbar.chkShowBlack.isSelected()) {
       return false;
     }
     if (Lizzie.config.showSuggestionVariations)
@@ -723,6 +726,10 @@ public class FloatBoard extends JDialog {
         || posWidth != width
         || posHeight != height
         || (cachedBoardType != boardType && boardType > 2)) {
+      if (posWidth != width || posHeight != height) {
+        extraX = 0;
+        extraY = 0;
+      }
       cachedBoardType = boardType;
       posX = x;
       posY = y;

@@ -2,9 +2,7 @@ package featurecat.lizzie.gui;
 
 import featurecat.lizzie.Config;
 import featurecat.lizzie.Lizzie;
-import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Toolkit;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JDialog;
@@ -21,7 +19,7 @@ public class Discribe extends JDialog {
 
     // getContentPane().setLayout(null);
     textAreaDiscribe = new JTextArea();
-    textAreaDiscribe.setFont(new Font("", Font.PLAIN, Config.frameFontSize));
+    textAreaDiscribe.setFont(new Font(Config.sysDefaultFontName, Font.PLAIN, Config.frameFontSize));
     textAreaDiscribe.setEditable(false);
     textAreaDiscribe.setLineWrap(true);
     textAreaDiscribe.setBackground(this.getBackground());
@@ -38,16 +36,12 @@ public class Discribe extends JDialog {
     textAreaDiscribe.setText(message);
     setTitle(title);
     // setSize(441, 272);
-    setLocationRelativeTo(null);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
     setVisible(true);
     // setSize(441, 273);
     if (Lizzie.config.isFrameFontSmall()) Lizzie.setFrameSize(this, 441, 273);
     else if (Lizzie.config.isFrameFontMiddle()) Lizzie.setFrameSize(this, 541, 313);
     else Lizzie.setFrameSize(this, 741, 373);
-    Dimension screensize = Toolkit.getDefaultToolkit().getScreenSize();
-    int x = (int) screensize.getWidth() / 2 - this.getWidth() / 2;
-    int y = (int) screensize.getHeight() / 2 - this.getHeight() / 2;
-    setLocation(x, y);
     this.setModal(true);
     setVisible(false);
     setVisible(true);
@@ -57,17 +51,12 @@ public class Discribe extends JDialog {
     textAreaDiscribe.setText(message);
     setTitle(title);
     // setSize(441, 272);
-    setLocationRelativeTo(null);
     setVisible(true);
     // setSize(441, 273);
     if (Lizzie.config.isFrameFontSmall()) Lizzie.setFrameSize(this, 541, 200);
     else if (Lizzie.config.isFrameFontMiddle()) Lizzie.setFrameSize(this, 641, 243);
     else Lizzie.setFrameSize(this, 801, 303);
-    Dimension screensize = Toolkit.getDefaultToolkit().getScreenSize();
-    int x = (int) screensize.getWidth() / 2 - this.getWidth() / 2;
-    int y = (int) screensize.getHeight() / 2 - this.getHeight() / 2;
-    setLocation(x, y);
-    this.setModal(true);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
     setVisible(false);
     setVisible(true);
   }
@@ -76,15 +65,12 @@ public class Discribe extends JDialog {
     textAreaDiscribe.setText(message);
     setTitle(title);
     setSize(width, height);
-    setLocationRelativeTo(null);
+
     setVisible(true);
     // setSize(441, 273);
     Lizzie.setFrameSize(this, width, height);
-    Dimension screensize = Toolkit.getDefaultToolkit().getScreenSize();
-    int x = (int) screensize.getWidth() / 2 - this.getWidth() / 2;
-    int y = (int) screensize.getHeight() / 2 - this.getHeight() / 2;
-    setLocation(x, y);
     this.setModal(true);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
     setVisible(false);
     setVisible(true);
   }

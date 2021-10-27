@@ -17,7 +17,7 @@ public class MoveData {
   // 待完成
   public List<String> pvVisits;
   public double lcb;
-  public double oriwinrate;
+  // public double oriwinrate;
   public double policy;
   // public int equalplayouts;
   public double scoreMean;
@@ -28,6 +28,9 @@ public class MoveData {
   public boolean isNextMove;
   public double bestWinrate;
   public double bestScoreMean;
+  public boolean lastTimeUnlimited;
+  public long lastTimeUnlimitedTime;
+  public boolean isSymmetry = false;
 
   public MoveData() {}
 
@@ -49,8 +52,9 @@ public class MoveData {
     String[] data = line.trim().split(" ");
     // int k =
     // Lizzie.config.config.getJSONObject("leelaz").getInt("max-suggestion-moves");
-    boolean islcb =
-        (Lizzie.config.leelaversion >= 17 && Lizzie.config.showlcbwinrate && !Lizzie.leelaz.noLcb);
+    //    boolean islcb =
+    //        (Lizzie.config.leelaversion >= 17 && Lizzie.config.showlcbwinrate &&
+    // !Lizzie.leelaz.noLcb);
     // Todo: Proper tag parsing in case gtp protocol is extended(?)/changed
     for (int i = 0; i < data.length; i++) {
       String key = data[i];
@@ -80,9 +84,9 @@ public class MoveData {
         if (key.equals("lcb")) {
           // LCB support
           result.lcb = Integer.parseInt(value) / 100.0;
-          if (islcb) {
-            result.winrate = Integer.parseInt(value) / 100.0;
-          }
+          //          if (islcb) {
+          //            result.winrate = Integer.parseInt(value) / 100.0;
+          //          }
         }
         if (key.equals("prior")) {
           result.policy = Integer.parseInt(value) / 100.0;
@@ -90,10 +94,11 @@ public class MoveData {
 
         if (key.equals("winrate")) {
           // support 0.16 0.15
-          result.oriwinrate = Integer.parseInt(value) / 100.0;
-          if (!islcb) {
-            result.winrate = Integer.parseInt(value) / 100.0;
-          }
+          result.winrate = Integer.parseInt(value) / 100.0;
+          // result.oriwinrate = result.winrate;
+          //          if (!islcb) {
+          //            result.winrate = Integer.parseInt(value) / 100.0;
+          //          }
         }
       }
     }
@@ -120,8 +125,9 @@ public class MoveData {
     String[] data = line.trim().split(" ");
     // int k =
     // Lizzie.config.config.getJSONObject("leelaz").getInt("max-suggestion-moves");
-    boolean islcb =
-        (Lizzie.config.leelaversion >= 17 && Lizzie.config.showlcbwinrate && !Lizzie.leelaz.noLcb);
+    //    boolean islcb =
+    //        (Lizzie.config.leelaversion >= 17 && Lizzie.config.showlcbwinrate &&
+    // !Lizzie.leelaz.noLcb);
     // Todo: Proper tag parsing in case gtp protocol is extended(?)/changed
     for (int i = 0; i < data.length; i++) {
       String key = data[i];
@@ -151,9 +157,9 @@ public class MoveData {
         if (key.equals("lcb")) {
           // LCB support
           result.lcb = Integer.parseInt(value) / 100.0;
-          if (islcb) {
-            result.winrate = Integer.parseInt(value) / 100.0;
-          }
+          //          if (islcb) {
+          //            result.winrate = Integer.parseInt(value) / 100.0;
+          //          }
         }
         if (key.equals("prior")) {
           result.policy = Integer.parseInt(value) / 100.0;
@@ -166,10 +172,11 @@ public class MoveData {
         }
         if (key.equals("winrate")) {
           // support 0.16 0.15
-          result.oriwinrate = Integer.parseInt(value) / 100.0;
-          if (!islcb) {
-            result.winrate = Integer.parseInt(value) / 100.0;
-          }
+          result.winrate = Integer.parseInt(value) / 100.0;
+          // result.oriwinrate = result.winrate;
+          //          if (!islcb) {
+          //            result.winrate = Integer.parseInt(value) / 100.0;
+          //          }
         }
       }
     }
@@ -181,8 +188,9 @@ public class MoveData {
   public static MoveData fromInfoKatago(String line) throws ArrayIndexOutOfBoundsException {
     MoveData result = new MoveData();
     String[] data = line.trim().split(" ");
-    boolean islcb =
-        (Lizzie.config.leelaversion >= 17 && Lizzie.config.showlcbwinrate && !Lizzie.leelaz.noLcb);
+    //    boolean islcb =
+    //        (Lizzie.config.leelaversion >= 17 && Lizzie.config.showlcbwinrate &&
+    // !Lizzie.leelaz.noLcb);
     // Todo: Proper tag parsing in case gtp protocol is extended(?)/changed
     for (int i = 0; i < data.length; i++) {
       String key = data[i];
@@ -227,19 +235,17 @@ public class MoveData {
         if (key.equals("lcb")) {
           // LCB support
           result.lcb = Double.parseDouble(value) * 100;
-          if (islcb) {
-            result.winrate = Double.parseDouble(value) * 100;
-          }
+          //          if (islcb) {
+          //            result.winrate = Double.parseDouble(value) * 100;
+          //          }
         }
         if (key.equals("prior")) {
           result.policy = Double.parseDouble(value) * 100;
         }
         if (key.equals("winrate")) {
           // support 0.16 0.15
-          result.oriwinrate = Double.parseDouble(value) * 100;
-          if (!islcb) {
-            result.winrate = Double.parseDouble(value) * 100;
-          }
+          result.winrate = Double.parseDouble(value) * 100;
+          // result.oriwinrate = result.winrate;
         }
         //        if (key.equals("scoreLead")) {
         //          result.scoreMean = Double.parseDouble(value);
@@ -250,9 +256,12 @@ public class MoveData {
         if (key.equals("scoreStdev")) {
           result.scoreStdev = Double.parseDouble(value);
         }
+        if (key.equals("isSymmetryOf")) {
+          result.isSymmetry = true;
+        }
       }
     }
-    if (result.winrate < 0) result.winrate = result.oriwinrate;
+    // if (result.winrate < 0) result.winrate = result.oriwinrate;
     result.isKataData = true;
     result.isSaiData = false;
     return result;
@@ -306,7 +315,7 @@ public class MoveData {
         if (key.equals("winrate")) {
           // support 0.16 0.15
           result.winrate = Integer.parseInt(value) / 100.0;
-          result.oriwinrate = result.winrate;
+          // result.oriwinrate = result.winrate;
           result.lcb = result.winrate;
         }
         if (key.equals("prior")) {
@@ -401,7 +410,7 @@ public class MoveData {
       MoveData result = new MoveData();
       result.coordinate = match.group(1);
       result.playouts = Integer.parseInt(match.group(2));
-      result.winrate = Double.parseDouble(match.group(Lizzie.config.showlcbwinrate ? 4 : 3));
+      result.winrate = Double.parseDouble(match.group(3));
       result.variation = Arrays.asList(match.group(5).split(" ", Lizzie.config.limitBranchLength));
       // result.variation = Arrays.asList(match.group(5).split(" "));
       return result;
@@ -420,7 +429,7 @@ public class MoveData {
       result.coordinate = matchold.group(1);
       result.playouts = Integer.parseInt(matchold.group(2));
       result.winrate = Double.parseDouble(matchold.group(3));
-      result.oriwinrate = result.winrate;
+      // result.oriwinrate = result.winrate;
       result.policy = Double.parseDouble(matchold.group(4));
       result.variation =
           Arrays.asList(matchold.group(5).split(" ", Lizzie.config.limitBranchLength));
@@ -434,7 +443,7 @@ public class MoveData {
       MoveData result = new MoveData();
       result.coordinate = match.group(1);
       result.playouts = Integer.parseInt(match.group(2));
-      result.winrate = Double.parseDouble(match.group(Lizzie.config.showlcbwinrate ? 4 : 3));
+      result.winrate = Double.parseDouble(match.group(3));
       result.scoreMean =
           Lizzie.board.getHistory().isBlacksTurn()
               ? Double.parseDouble(match.group(5))
@@ -448,6 +457,7 @@ public class MoveData {
       return null;
     }
   }
+
   // C15  ->      718, 47.87%, C15 O17 R14 Q18 R6 O3 M17 R17 P17 P18
   public static MoveData fromSummaryZen(String summary) {
     String[] params = summary.trim().split(",");
@@ -481,13 +491,10 @@ public class MoveData {
       Pattern.compile(
           "^ *(\\w\\d*) -> *(\\d+) \\(V: ([^%)]+)%\\) \\(LCB: ([^%)]+)%\\) \\([^\\)]+\\) \\(A: ([^)]+)\\) PV: (.+).*$");
 
-  // support 0.16 0.15
-  private static Pattern summaryPatternhandicap =
-      Pattern.compile("^ *(\\w\\d*) ->    *(\\d+) \\(V: ([^%)]+)%\\) \\([^\\)]+\\) PV: (.+).* $");
-
   public static int getPlayouts(List<MoveData> moves) {
     int playouts = 0;
     for (MoveData move : moves) {
+      if (move.isSymmetry) continue;
       playouts += move.playouts;
     }
     return playouts;

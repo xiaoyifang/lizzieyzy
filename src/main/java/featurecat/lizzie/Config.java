@@ -1,5 +1,7 @@
 package featurecat.lizzie;
 
+import featurecat.lizzie.analysis.EngineManager;
+import featurecat.lizzie.gui.LizzieFrame;
 import featurecat.lizzie.theme.Theme;
 import featurecat.lizzie.util.Utils;
 import java.awt.Color;
@@ -32,11 +34,11 @@ public class Config {
   public boolean showBestMovesTemporarily = false;
   public boolean showCaptured = true;
   // public boolean handicapInsteadOfWinrate = false;
-  public boolean showDynamicKomi = false;
+  //  public boolean showDynamicKomi = false;
   public double replayBranchIntervalSeconds = 0.9;
   public boolean showCoordinates = true;
   public boolean colorByWinrateInsteadOfVisits = false;
-  public boolean showlcbwinrate = false;
+  // public boolean showlcbwinrate = false;
   public boolean playponder = true;
   public int showrect = 1;
   public boolean showlcbcolor = false;
@@ -62,11 +64,11 @@ public class Config {
   public boolean loadEstimateEngine = false;
   public String estimateCommand =
       "katago"
-          + Utils.pwd
+          + File.separator
           + "katago.exe gtp -model weights"
-          + Utils.pwd
+          + File.separator
           + "kata20bs530.bin.gz -config katago"
-          + Utils.pwd
+          + File.separator
           + "estimate.cfg";
   public Double estimateThreshold = 0.4;
 
@@ -80,30 +82,36 @@ public class Config {
   public boolean readKomi = true;
   public boolean alwaysGotoLastOnLive = false;
   // public String readBoardArg1 = "0";
-  public int readBoardArg2 = 200;
-  public boolean readBoardArg3 = true;
+  //  public int readBoardArg2 = 200;
+  //  public boolean readBoardArg3 = true;
   public boolean alwaysSyncBoardStat = true;
   public boolean playSound = true;
   public boolean notPlaySoundInSync = true;
   public boolean noRefreshOnMouseMove = true;
-  public boolean syncBoth = false;
+  // public boolean syncBoth = false;
   public boolean showBlueRing = true;
   public boolean isShowingWinrateGraph = true;
   public boolean isShowingMoveList = true;
   public int moveListSelectedBranch = 0;
   // public double matchAiTemperature = 1;
   public boolean showMoveListGraph = true;
-  public boolean readBoardArg4 = false;
   public boolean whiteSuggestionWhite = false;
   public boolean whiteSuggestionOrderWhite = false;
   public boolean advanceTimeSettings = false;
-  public String advanceTimeTxt = "time_settings 10 2 1";
+  public String advanceTimeTxt = "time_settings 120 2 1";
+
+  public boolean kataTimeSettings = false;
+  public int kataTimeType = 0; // 0=读秒,1=加秒.2=包干
+  public int kataTimeMainTimeMins = 10;
+  public int kataTimeByoyomiSecs = 5;
+  public int kataTimeByoyomiTimes = 3;
+  public int kataTimeFisherIncrementSecs = 5;
 
   public boolean pkAdvanceTimeSettings = false;
-  public String advanceBlackTimeTxt = "time_settings 10 2 1";
-  public String advanceWhiteTimeTxt = "time_settings 10 2 1";
+  public String advanceBlackTimeTxt = "time_settings 120 2 1";
+  public String advanceWhiteTimeTxt = "time_settings 120 2 1";
 
-  public int extraMode = 0;
+  public ExtraMode extraMode = ExtraMode.Normal;
 
   public JSONObject config;
   public JSONObject leelazConfig;
@@ -114,14 +122,15 @@ public class Config {
   public JSONObject saveBoardConfig;
 
   private String configFilename = "config.txt";
-  private String persistFilename = "persistnew";
-  private String saveBoardFilename = "save" + Utils.pwd + "save";
+  private String persistFilename = "persist";
+  private String saveBoardFilename = "save" + File.separator + "save";
 
   public Theme theme;
   public float winrateStrokeWidth = 1.7f;
   public int leelaversion = 17;
   public int minimumBlunderBarWidth = 3;
   public int shadowSize = 75;
+  public static String sysDefaultFontName = "Dialog.plain";
   public String fontName = null;
   public String uiFontName = null;
   public String winrateFontName = null;
@@ -149,9 +158,9 @@ public class Config {
   public int limitBranchLength = 0;
   public int limitMaxSuggestion = 10;
   public boolean showNoSuggCircle = false;
-  public int limitbadmoves = 0;
-  public int limitbadMeanmoves = 0;
-  public int limitbadplayouts = 0;
+  public int moveListWinrateThreshold = 0;
+  public int moveListScoreThreshold = 0;
+  public int moveListVisitsThreshold = 0;
   public int analyzeUpdateIntervalCentisec;
   public int analyzeUpdateIntervalCentisecSSH;
   public boolean showHeat = false;
@@ -185,6 +194,7 @@ public class Config {
   public boolean tryPlay = true;
   public boolean analyzeList = true;
   public boolean move = true;
+  public boolean moveRank = true;
   public boolean coords = true;
   public boolean liveButton = true;
   public boolean badMoves = false;
@@ -210,8 +220,8 @@ public class Config {
   public int scoreDiffRange1 = 2;
   public int scoreDiffRange2 = 5;
 
-  public int parse1Move = 60;
-  public int parse2Move = 140;
+  public int openingEndMove = 60;
+  public int middleEndMove = 160;
 
   public boolean checkRandomVisits = false;;
   public double percentsRandomVisits = 10;
@@ -255,22 +265,24 @@ public class Config {
 
   public boolean chkKataEnginePDA = false;
   public String txtKataEnginePDA = "";
+  public String autoLoadTxtKataEnginePDA = "";
   public boolean autoLoadKataEnginePDA = false;
 
-  public boolean chkKataEngineRPT = false;
-  public String txtKataEngineRPT = "";
-  public boolean autoLoadKataEngineRPT = false;
+  //  public boolean chkKataEngineRPT = false;
+  //  public String txtKataEngineRPT = "";
+  //  public boolean autoLoadKataEngineRPT = false;
 
   public boolean chkKataEngineWRN = false;
   public String txtKataEngineWRN = "";
+  public String autoLoadTxtKataEngineWRN = "";
   public boolean autoLoadKataEngineWRN = false;
 
   public boolean chkKataEngineThreads = false;
   public String txtKataEngineThreads = "";
   public boolean autoLoadKataEngineThreads = false;
 
-  public boolean showWRNInMenu = false;
-  public boolean showPDAInMenu = false;
+  public boolean showWRNInMenu = true;
+  public boolean showPDAInMenu = true;
 
   public boolean enginePkPonder = false;
   public boolean alwaysGtp = true;
@@ -342,11 +354,11 @@ public class Config {
   public boolean userKnownX = false;
 
   public boolean useZenEstimate = false;
-  public String zenEstimateCommand = "ZenEstimate" + Utils.pwd + "ZenGTP.exe";
+  public String zenEstimateCommand = "ZenEstimate" + File.separator + "ZenGTP.exe";
 
   public boolean showDoubleMenu = true;
   public boolean showDoubleMenuVar = true;
-  public boolean showDoubleMenuMoveInfo = true;
+  public boolean showDoubleMenuMoveInfo = false;
   public boolean showDoubleMenuGameControl = true;
 
   public String hostName = "";
@@ -511,7 +523,6 @@ public class Config {
   public int blunderScoreThreshold = 0;
   public int blunderPlayoutsThreshold = 0;
 
-  // aaa 待处理读取保存
   public boolean autoAnaDiffEnable = false;
 
   public boolean autoAnaDiffBlack = true;
@@ -541,9 +552,53 @@ public class Config {
   public boolean ignoreOutOfWidth = false;
   public int maxTreeWidth = 10000;
 
+  public boolean disableWRNInGame = true;
+  public boolean notStartPondering = false;
+
+  public int gameStatisticsCustomStart = 10;
+  public int gameStatisticsCustomEnd = 200;
+  public boolean moveListFilterCurrent = false;
+  public boolean lossPanelSelectWinrate = false;
+  public boolean analysisAutoQuit = true;
+  public boolean firstLoadKataGo = true;
+
+  public int txtMoveRankMarkLastMove = 3;
+  public int moveRankMarkLastMove = 1; // -1关闭 0全部
+  public boolean disableMoveRankInOrigin = false;
+  public boolean logConsoleToFile = false;
+  public boolean logGtpToFile = false;
+  public boolean readBoardPonder = false;
+  public boolean readBoardGetFocus = true;
+
+  public int otherSizeWidth = 21;
+  public int otherSizeHeight = 21;
+  public boolean useFoxStyleCoords = false;
+  public boolean stopAtEmptyBoard = false;
+
+  public boolean useScoreDiffInVariationTree = true;
+  public double scoreDiffInVariationTreeFactor = 0.5;
+
+  public boolean useScoreLossInMoveRank = true;
+  public boolean useWinLossInMoveRank = true;
+
+  public double winLossThreshold1 = -1;
+  public double winLossThreshold2 = -3;
+  public double winLossThreshold3 = -6;
+  public double winLossThreshold4 = -12;
+  public double winLossThreshold5 = -24;
+
+  public double scoreLossThreshold1 = -0.5;
+  public double scoreLossThreshold2 = -1.5;
+  public double scoreLossThreshold3 = -3;
+  public double scoreLossThreshold4 = -6;
+  public double scoreLossThreshold5 = -12;
+
+  public boolean showPonderLimitedTips = true;
+  public int foxAfterGet = 0; // 0=最小化,1=关闭,2=无动作
+  public boolean continueWithBestMove = false;
+
   private JSONObject loadAndMergeSaveBoardConfig(
       JSONObject defaultCfg, String fileName, boolean needValidation) throws IOException {
-
     File file = new File(fileName);
     File dir = new File("save");
     if (!dir.exists()) {
@@ -584,7 +639,6 @@ public class Config {
     File file = new File(fileName);
     if (!file.canRead()) {
       System.err.printf("Creating config file %s\n", fileName);
-
       try {
         writeConfig(defaultCfg, file);
       } catch (JSONException e) {
@@ -595,7 +649,6 @@ public class Config {
 
     FileInputStream fp = new FileInputStream(file);
     InputStreamReader reader = new InputStreamReader(fp, "utf-8");
-
     JSONObject mergedcfg = new JSONObject(new JSONTokener(reader));
     boolean modified = mergeDefaults(mergedcfg, defaultCfg);
 
@@ -705,8 +758,11 @@ public class Config {
 
     if (isDefaultTheme && isEmptyBlunderWinrateThresholds && isEmptyBlunderNodeColors) {
       // https://github.com/featurecat/lizzie/issues/423#issuecomment-438878060
-      ui.put("blunder-winrate-thresholds", new JSONArray("[-20, -10]"));
-      ui.put("blunder-node-colors", new JSONArray("[[255, 0, 0], [255, 153, 0]]"));
+      ui.put("blunder-winrate-thresholds", new JSONArray("[-24,-12,-6,-3,-1,3,100]"));
+      ui.put(
+          "blunder-node-colors",
+          new JSONArray(
+              "[[155, 25, 150],[208, 16, 19],[200, 140, 50],[180, 180, 0],[140, 202, 34],[0, 220, 0],[0,230,230]]"));
       modified = true;
     }
 
@@ -714,25 +770,43 @@ public class Config {
     return modified;
   }
 
+  public void resetBlunderColor() {
+    Theme theme = new Theme();
+    if (theme.getTheme(uiConfig)) {
+      theme.config.put("blunder-winrate-thresholds", new JSONArray("[-24,-12,-6,-3,-1,3,100]"));
+      theme.config.put(
+          "blunder-node-colors",
+          new JSONArray(
+              "[[155, 25, 150],[208, 16, 19],[200, 140, 50],[180, 180, 0],[140, 202, 34],[0, 220, 0],[0,210,210]]"));
+      theme.save();
+    } else {
+      uiConfig.put("blunder-winrate-thresholds", new JSONArray("[-24,-12,-6,-3,-1,3,100]"));
+      uiConfig.put(
+          "blunder-node-colors",
+          new JSONArray(
+              "[[155, 25, 150],[208, 16, 19],[200, 140, 50],[180, 180, 0],[140, 202, 34],[0, 220, 0],[0,210,210]]"));
+      try {
+        save();
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+  }
+
   public static void copyFile(File sourceFile, File targetFile) throws IOException {
-    // 新建文件输入流并对它进行缓冲
     FileInputStream input = new FileInputStream(sourceFile);
     BufferedInputStream inBuff = new BufferedInputStream(input);
-
-    // 新建文件输出流并对它进行缓冲
     FileOutputStream output = new FileOutputStream(targetFile);
     BufferedOutputStream outBuff = new BufferedOutputStream(output);
 
-    // 缓冲数组
     byte[] b = new byte[1024 * 5];
     int len;
     while ((len = inBuff.read(b)) != -1) {
       outBuff.write(b, 0, len);
     }
-    // 刷新此缓冲的输出流
     outBuff.flush();
 
-    // 关闭流
     inBuff.close();
     outBuff.close();
     output.close();
@@ -743,8 +817,12 @@ public class Config {
     JSONObject defaultConfig = createDefaultConfig();
     JSONObject persistConfig = createPersistConfig();
     JSONObject saveBoardConf = createSaveBoardConfig();
-
-    this.persisted = loadAndMergeConfig(persistConfig, persistFilename, false);
+    try {
+      this.persisted = loadAndMergeConfig(persistConfig, persistFilename, false);
+    } catch (Exception e) {
+      e.printStackTrace();
+      this.persisted = persistConfig;
+    }
     // Main properties
     try {
       this.config = loadAndMergeConfig(defaultConfig, configFilename, true);
@@ -752,8 +830,8 @@ public class Config {
       try {
         File file = new File("");
         String courseFile = file.getCanonicalPath();
-        File fileconfig = new File(courseFile + Utils.pwd + configFilename);
-        File wrongfileconfig = new File(courseFile + Utils.pwd + "config_wrong.txt");
+        File fileconfig = new File(courseFile + File.separator + configFilename);
+        File wrongfileconfig = new File(courseFile + File.separator + "config_wrong.txt");
         copyFile(fileconfig, wrongfileconfig);
       } catch (Exception ex) {
       }
@@ -772,7 +850,8 @@ public class Config {
     fastCommandsWidth = persistedUi.optInt("fast-commands-width", 500);
     fastCommandsHeight = persistedUi.optInt("fast-commands-height", 500);
 
-    theme = new Theme(uiConfig);
+    theme = new Theme();
+    theme.getTheme(uiConfig);
 
     // showBorder = uiConfig.optBoolean("show-border", false);
     showMoveNumber = uiConfig.getBoolean("show-move-number");
@@ -793,7 +872,7 @@ public class Config {
     // dynamicWinrateGraphWidth = uiConfig.optBoolean("dynamic-winrate-graph-width", true);
     showVariationGraph = uiConfig.getBoolean("show-variation-graph");
     showComment = uiConfig.optBoolean("show-comment", true);
-    if (extraMode == 2) showComment = false;
+    if (extraMode == ExtraMode.Double_Engine) showComment = false;
     showCaptured = uiConfig.getBoolean("show-captured");
     // showKataGoScoreMean = uiConfig.optBoolean("show-katago-scoremean", true);
     showKataGoBoardScoreMean = uiConfig.optBoolean("show-katago-boardscoremean", false);
@@ -811,11 +890,11 @@ public class Config {
         uiConfig.optString(
             "estimate-command",
             "katago"
-                + Utils.pwd
+                + File.separator
                 + "katago.exe gtp -model weights"
-                + Utils.pwd
+                + File.separator
                 + "kata20bs530.bin.gz -config katago"
-                + Utils.pwd
+                + File.separator
                 + "estimate.cfg");
     estimateThreshold = uiConfig.optDouble("estimate-threshold", 0.4);
 
@@ -848,11 +927,11 @@ public class Config {
     userKnownX = uiConfig.optBoolean("user-known-x", false);
     useZenEstimate = uiConfig.optBoolean("use-zen-estimate", false);
     zenEstimateCommand =
-        uiConfig.optString("use-estimate-command", "ZenEstimate" + Utils.pwd + "ZenGTP.exe");
+        uiConfig.optString("use-estimate-command", "ZenEstimate" + File.separator + "ZenGTP.exe");
     showDoubleMenu = uiConfig.optBoolean("show-double-menu", true);
     showDoubleMenuGameControl = uiConfig.optBoolean("show-double-menu-game-control", true);
     showDoubleMenuVar = uiConfig.optBoolean("show-double-menu-var", true);
-    showDoubleMenuMoveInfo = uiConfig.optBoolean("show-double-menu-moveinfo", true);
+    showDoubleMenuMoveInfo = uiConfig.optBoolean("show-double-menu-moveinfo", false);
     firstTimeLoad = uiConfig.optBoolean("first-time-load", true);
     hostName = uiConfig.optString("host-name", "");
     showListPane = uiConfig.optBoolean("show-list-pane", true);
@@ -944,24 +1023,27 @@ public class Config {
     readKomi = uiConfig.optBoolean("read-komi", true);
     alwaysGotoLastOnLive = uiConfig.optBoolean("always-gotolast-onlive", false);
     alwaysSyncBoardStat = uiConfig.optBoolean("always-sync-boardstat", true);
-    //    readBoardArg1 = uiConfig.optString("read-board-arg1", "0");
-    readBoardArg2 = uiConfig.optInt("read-board-arg2", 200);
-    readBoardArg3 = uiConfig.optBoolean("read-board-arg3", true);
-    readBoardArg4 = uiConfig.optBoolean("read-board-arg4", false);
     whiteSuggestionWhite = uiConfig.optBoolean("white-suggestion-white", false);
     whiteSuggestionOrderWhite = uiConfig.optBoolean("white-suggestion-order-white", false);
     advanceTimeSettings = uiConfig.optBoolean("advance-time-settings", false);
     advanceTimeTxt = uiConfig.optString("advance-time-txt", "time_settings 10 2 1");
 
+    kataTimeSettings = uiConfig.optBoolean("kata-time-settings", false);
+    kataTimeType = uiConfig.optInt("kata-time-type", 0);
+    kataTimeMainTimeMins = uiConfig.optInt("kata-time-main-time-mins", 10);
+    kataTimeByoyomiSecs = uiConfig.optInt("kata-time-byoyomi-secs", 5);
+    kataTimeByoyomiTimes = uiConfig.optInt("kata-time-byoyomi-times", 3);
+    kataTimeFisherIncrementSecs = uiConfig.optInt("kata-time-fisher-increment-secs", 5);
+
     pkAdvanceTimeSettings = uiConfig.optBoolean("pk-advance-time-settings", false);
     advanceBlackTimeTxt = uiConfig.optString("advance-black-time-txt", "time_settings 10 2 1");
     advanceWhiteTimeTxt = uiConfig.optString("advance-white-time-txt", "time_settings 10 2 1");
 
-    extraMode = uiConfig.optInt("extra-mode", 0);
+    extraMode = getExtraMode(uiConfig.optInt("extra-mode", 0));
     playSound = uiConfig.optBoolean("play-sound", true);
     notPlaySoundInSync = uiConfig.optBoolean("not-play-sound-insync", true);
     noRefreshOnMouseMove = uiConfig.optBoolean("norefresh-onmouse-move", true);
-    syncBoth = uiConfig.optBoolean("sync-both", false);
+    // syncBoth = uiConfig.optBoolean("sync-both", false);
     isShowingWinrateGraph = uiConfig.optBoolean("show-winrate-matchai", true);
     isShowingMoveList = uiConfig.optBoolean("show-movelist-matchai", true);
     moveListSelectedBranch = uiConfig.optInt("moveList-selected-branch", 0);
@@ -1032,9 +1114,9 @@ public class Config {
     showNoSuggCircle = leelazConfig.optBoolean("show-nosugg-circle", false);
     enableLizzieCache = leelazConfig.optBoolean("enable-lizzie-cache", true);
 
-    limitbadMeanmoves = uiConfig.optInt("badmoves-scoremean-limits", 0);
-    limitbadmoves = uiConfig.optInt("badmoves-winrate-limits", 0);
-    limitbadplayouts = uiConfig.optInt("badmoves-playouts-limits", 0);
+    moveListScoreThreshold = uiConfig.optInt("move-list-score-threshold", 0);
+    moveListWinrateThreshold = uiConfig.optInt("move-list-winrate-threshold", 0);
+    moveListVisitsThreshold = uiConfig.optInt("move-list-visits-threshold", 0);
     showTimeControlInMenu = uiConfig.optBoolean("show-time-control-in-menu", false);
     showPlayoutControlInMenu = uiConfig.optBoolean("show-playout-control-in-menu", false);
     suggestionInfoWinrate = uiConfig.optInt("suggestion-info-winrate", 1);
@@ -1070,6 +1152,7 @@ public class Config {
     tryPlay = uiConfig.optBoolean("tryPlay", true);
     analyzeList = uiConfig.optBoolean("analyze-list", true);
     move = uiConfig.optBoolean("move", true);
+    moveRank = uiConfig.optBoolean("move-rank", true);
     coords = uiConfig.optBoolean("coords", true);
     autoPlay = uiConfig.optBoolean("autoPlay", true);
     showQuickLinks = uiConfig.optBoolean("show-quick-links", false);
@@ -1096,8 +1179,8 @@ public class Config {
     winrateDiffRange2 = uiConfig.optInt("winrate-diff-range2", 10);
     scoreDiffRange1 = uiConfig.optInt("score-diff-range1", 2);
     scoreDiffRange2 = uiConfig.optInt("score-diff-range2", 5);
-    parse1Move = uiConfig.optInt("parse1-Move", 60);
-    parse2Move = uiConfig.optInt("parse2-Move", 140);
+    openingEndMove = uiConfig.optInt("opening-end-move", 60);
+    middleEndMove = uiConfig.optInt("middle-end-move", 160);
     checkRandomVisits = uiConfig.optBoolean("check-random-visits", false);
     percentsRandomVisits = uiConfig.optDouble("percents-random-visits", 10.0);
 
@@ -1145,8 +1228,10 @@ public class Config {
     autoLoadKataEnginePDA = uiConfig.optBoolean("autoload-kata-engine-pda", false);
 
     // chkKataEngineRPT  = uiConfig.optBoolean("chk-kata-engine-rpt", false);
-    txtKataEngineRPT = uiConfig.optString("txt-kata-engine-rpt", "");
-    autoLoadKataEngineRPT = uiConfig.optBoolean("autoload-kata-engine-rpt", false);
+    // txtKataEngineRPT = uiConfig.optString("txt-kata-engine-rpt", "");
+    //   autoLoadKataEngineRPT = uiConfig.optBoolean("autoload-kata-engine-rpt", false);
+    autoLoadTxtKataEnginePDA = uiConfig.optString("auto-load-txt-kata-engine-pda", "");
+    autoLoadTxtKataEngineWRN = uiConfig.optString("auto-load-txt-kata-engine-wrn", "");
 
     //  chkKataEngineWRN  = uiConfig.optBoolean("chk-kata-engine-wrn", false);
     txtKataEngineWRN = uiConfig.optString("txt-kata-engine-wrn", "");
@@ -1155,11 +1240,42 @@ public class Config {
     txtKataEngineThreads = uiConfig.optString("txt-kata-engine-threads", "");
     autoLoadKataEngineThreads = uiConfig.optBoolean("autoload-kata-engine-threads", false);
 
-    showWRNInMenu = uiConfig.optBoolean("show-wrn-in-menu", false);
-    showPDAInMenu = uiConfig.optBoolean("show-pda-in-menu", false);
+    showWRNInMenu = uiConfig.optBoolean("show-wrn-in-menu", true);
+    showPDAInMenu = uiConfig.optBoolean("show-pda-in-menu", true);
+    disableWRNInGame = uiConfig.optBoolean("disable-wrn-in-game", true);
 
     showReplaceFileHint = uiConfig.optBoolean("show-replace-file-hint", true);
     maxTreeWidth = uiConfig.optInt("max-tree-width", 10000);
+    gameStatisticsCustomStart = uiConfig.optInt("game-statistics-custom-start", 10);
+    gameStatisticsCustomEnd = uiConfig.optInt("game-statistics-custom-end", 200);
+    moveListFilterCurrent = uiConfig.optBoolean("move-list-filter-current", false);
+    lossPanelSelectWinrate = uiConfig.optBoolean("loss-panel-select-winrate", false);
+    analysisAutoQuit = uiConfig.optBoolean("analysis-auto-quit", true);
+    firstLoadKataGo = uiConfig.optBoolean("first-load-katago", true);
+    txtMoveRankMarkLastMove = uiConfig.optInt("txt-move-rank-mark-last-move", 3);
+    moveRankMarkLastMove = uiConfig.optInt("move-rank-mark-last-move", 1);
+    disableMoveRankInOrigin = uiConfig.optBoolean("disable-move-rank-in-origin", false);
+    logConsoleToFile = uiConfig.optBoolean("log-console-to-file", false);
+    logGtpToFile = uiConfig.optBoolean("log-gtp-to-file", false);
+    readBoardGetFocus = uiConfig.optBoolean("read-board-get-focus", true);
+    useScoreLossInMoveRank = uiConfig.optBoolean("use-score-loss-in-move-rank", true);
+    useWinLossInMoveRank = uiConfig.optBoolean("use-win-loss-in-move-rank", true);
+    winLossThreshold1 = uiConfig.optDouble("win-loss-threshold-1", -1);
+    winLossThreshold2 = uiConfig.optDouble("win-loss-threshold-2", -3);
+    winLossThreshold3 = uiConfig.optDouble("win-loss-threshold-3", -6);
+    winLossThreshold4 = uiConfig.optDouble("win-loss-threshold-4", -12);
+    winLossThreshold5 = uiConfig.optDouble("win-loss-threshold-5", -24);
+    scoreLossThreshold1 = uiConfig.optDouble("score-loss-threshold-1", -0.5);
+    scoreLossThreshold2 = uiConfig.optDouble("score-loss-threshold-2", -1.5);
+    scoreLossThreshold3 = uiConfig.optDouble("score-loss-threshold-3", -3);
+    scoreLossThreshold4 = uiConfig.optDouble("score-loss-threshold-4", -6);
+    scoreLossThreshold5 = uiConfig.optDouble("score-loss-threshold-5", -12);
+    showPonderLimitedTips = uiConfig.optBoolean("show-ponder-limited-tips", true);
+    foxAfterGet = uiConfig.optInt("fox-after-get", 0);
+    continueWithBestMove = uiConfig.optBoolean("continue-with-best-move", false);
+    otherSizeWidth = uiConfig.optInt("other-size-width", 21);
+    otherSizeHeight = uiConfig.optInt("other-size-height", 21);
+    useFoxStyleCoords = uiConfig.optBoolean("use-fox-style-coords", false);
     showScrollVariation = uiConfig.optBoolean("show-scroll-variation", true);
     ignoreOutOfWidth = uiConfig.optBoolean("ignore-out-of-width", false);
     enginePkPonder = uiConfig.optBoolean("engine-pk-ponder", false);
@@ -1190,6 +1306,7 @@ public class Config {
     deleteMove = uiConfig.optBoolean("deleteMove", true);
     // showlcbwinrate = config.getJSONObject("leelaz").optBoolean("show-lcb-winrate", false);
     playponder = leelazConfig.optBoolean("play-ponder", true);
+    stopAtEmptyBoard = leelazConfig.optBoolean("stop-at-empty-board", false);
     maxGameThinkingTimeSeconds = leelazConfig.optInt("max-game-thinking-time-seconds", 2);
 
     // showlcbcolor = config.getJSONObject("leelaz").optBoolean("show-lcb-color", false);
@@ -1249,7 +1366,10 @@ public class Config {
   }
 
   public void readThemeVaule(boolean first) {
-    if (!first) theme = new Theme(uiConfig);
+    if (!first) {
+      theme = new Theme();
+      theme.getTheme(uiConfig);
+    }
     int oriShadowSize = shadowSize;
     boolean oriShowStoneShadow = showStoneShadow;
     boolean oriUsePureBackground = usePureBackground;
@@ -1278,8 +1398,11 @@ public class Config {
     commentNodeColor = theme.commentNodeColor();
     blunderWinrateThresholds = theme.blunderWinrateThresholds();
     blunderNodeColors = theme.blunderNodeColors();
+    useScoreDiffInVariationTree = theme.useScoreDiffInVariationTree(true);
+    scoreDiffInVariationTreeFactor = theme.scoreDiffInVariationTreeFactor(true);
     usePureBackground = theme.usePureBackground(true);
     pureBackgroundColor = theme.pureBackgroundColor();
+    if (usePureBackground && !first) Lizzie.frame.setBackgroundColor(pureBackgroundColor);
     usePureBoard = theme.usePureBoard(true);
     pureBoardColor = theme.pureBoardColor();
     usePureStone = theme.usePureStone(true);
@@ -1295,27 +1418,26 @@ public class Config {
     if (!first
         && (!blackStoneImageString.equals(oriBlackStoneImageString)
             || !whiteStoneImageString.equals(oriWhiteStoneImageString))) {
-      Lizzie.frame.boardRenderer.reCreateStoneImageAnyway();
+      LizzieFrame.boardRenderer.reCreateStoneImageAnyway();
       if (Lizzie.frame.independentMainBoard != null)
         Lizzie.frame.independentMainBoard.boardRenderer.reCreateStoneImageAnyway();
-      if (Lizzie.frame.boardRenderer2 != null)
-        Lizzie.frame.boardRenderer2.reCreateStoneImageAnyway();
+      if (LizzieFrame.boardRenderer2 != null) LizzieFrame.boardRenderer2.reCreateStoneImageAnyway();
     } else if (!first
         && (oriShadowSize != shadowSize
             || oriShowStoneShadow != showStoneShadow
             || oriUsePureStone != usePureStone)) {
-      Lizzie.frame.boardRenderer.reDrawStoneAnyway();
+      LizzieFrame.boardRenderer.reDrawStoneAnyway();
       if (Lizzie.frame.independentMainBoard != null)
         Lizzie.frame.independentMainBoard.boardRenderer.reDrawStoneAnyway();
-      if (Lizzie.frame.boardRenderer2 != null) Lizzie.frame.boardRenderer2.reDrawStoneAnyway();
+      if (LizzieFrame.boardRenderer2 != null) LizzieFrame.boardRenderer2.reDrawStoneAnyway();
     }
     if (!first
         && (oriUsePureBoard != usePureBoard
             || oriPureBoardColor != pureBoardColor
             || !oriBoardImageString.equals(boardImageString))) {
-      Lizzie.frame.boardRenderer.reDrawGobanAnyway();
-      Lizzie.frame.subBoardRenderer.reDrawGobanAnyway();
-      if (Lizzie.frame.boardRenderer2 != null) Lizzie.frame.boardRenderer2.reDrawGobanAnyway();
+      LizzieFrame.boardRenderer.reDrawGobanAnyway();
+      LizzieFrame.subBoardRenderer.reDrawGobanAnyway();
+      if (LizzieFrame.boardRenderer2 != null) LizzieFrame.boardRenderer2.reDrawGobanAnyway();
       if (Lizzie.frame.independentMainBoard != null)
         Lizzie.frame.independentMainBoard.boardRenderer.reDrawGobanAnyway();
       if (Lizzie.frame.independentSubBoard != null)
@@ -1326,13 +1448,10 @@ public class Config {
             || oriPureBackgroundColor != pureBoardColor
             || !oriBackgroundImageString.equals(backgroundImageString))) {
       Lizzie.frame.redrawBackgroundAnyway = true;
-      Lizzie.frame.boardRenderer.reDrawBackgroundAnyway();
+      LizzieFrame.boardRenderer.reDrawBackgroundAnyway();
+      if (LizzieFrame.boardRenderer2 != null) LizzieFrame.boardRenderer2.reDrawBackgroundAnyway();
+      LizzieFrame.subBoardRenderer.reDrawBackgroundAnyway();
     }
-  }
-
-  private File File(String fileold) {
-    // TODO Auto-generated method stub
-    return null;
   }
 
   // Modifies config by adding in values from default_config that are missing.
@@ -1363,6 +1482,12 @@ public class Config {
   public void setClassicMode(boolean status) {
     isClassicMode = status;
     uiConfig.put("is-classic-mode", isClassicMode);
+    try {
+      save();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
   public int getMySaveTime() {
@@ -1430,15 +1555,44 @@ public class Config {
     }
   }
 
-  public void toggleShowLcbWinrate() {
-    this.showlcbwinrate = !this.showlcbwinrate;
+  public void setTxtMoveRankMarkLastMove(int value) {
+    txtMoveRankMarkLastMove = value;
+    uiConfig.put("txt-move-rank-mark-last-move", txtMoveRankMarkLastMove);
+  }
+
+  public void setShowRankMark(boolean showAll, boolean showLast, int showLimit) {
+    if (showAll) moveRankMarkLastMove = 0;
+    else if (showLast) moveRankMarkLastMove = 1;
+    else {
+      moveRankMarkLastMove = showLimit;
+    }
+    uiConfig.put("move-rank-mark-last-move", moveRankMarkLastMove);
+    LizzieFrame.menu.setBtnRankMark();
+  }
+
+  public void toggleDisableMoveRankInOrigin() {
+    disableMoveRankInOrigin = !disableMoveRankInOrigin;
+    uiConfig.put("disable-move-rank-in-origin", disableMoveRankInOrigin);
+  }
+
+  public void toggleShowMoveRankMark() {
+    if (moveRankMarkLastMove < 0) moveRankMarkLastMove = 1;
+    else if (moveRankMarkLastMove == 1) {
+      if (txtMoveRankMarkLastMove > 1) moveRankMarkLastMove = txtMoveRankMarkLastMove;
+      else moveRankMarkLastMove = 0;
+    } else if (txtMoveRankMarkLastMove > 1 && moveRankMarkLastMove == txtMoveRankMarkLastMove) {
+      moveRankMarkLastMove = 0;
+    } else if (moveRankMarkLastMove == 0) moveRankMarkLastMove = -1;
+    if (moveRankMarkLastMove > 0) Lizzie.config.hiddenMoveNumber();
+    uiConfig.put("move-rank-mark-last-move", moveRankMarkLastMove);
+    LizzieFrame.menu.setBtnRankMark();
   }
 
   public void toggleExtraMode(int mode) {
-    // 3=思考模式 2=双引擎模式 1=四方图模式 7=精简模式 8=浮动棋盘模式
-    extraMode = mode;
-    if (mode != 8) Lizzie.frame.extraMode(mode);
-    uiConfig.put("extra-mode", extraMode);
+    ExtraMode previousMode = extraMode;
+    extraMode = getExtraMode(mode);
+    Lizzie.frame.extraMode(extraMode, previousMode);
+    uiConfig.put("extra-mode", getExtraModeValue(extraMode));
   }
 
   public void toggleappendWinrateToComment() {
@@ -1451,9 +1605,14 @@ public class Config {
     uiConfig.put("show-moveall-inbranch", showMoveAllInBranch);
   }
 
+  public void hiddenMoveNumber() {
+    allowMoveNumber = 0;
+    uiConfig.put("allow-move-number", allowMoveNumber);
+  }
+
   public void toggleShowMoveNumber() {
     onlyLastMoveNumber = 1;
-    if (Lizzie.engineManager.isEngineGame && Lizzie.engineManager.engineGameInfo.isGenmove) {
+    if (EngineManager.isEngineGame && EngineManager.engineGameInfo.isGenmove) {
       allowMoveNumber = (allowMoveNumber == -1 ? onlyLastMoveNumber : -1);
     } else {
       if (this.onlyLastMoveNumber > 0) {
@@ -1464,6 +1623,7 @@ public class Config {
       }
     }
     uiConfig.put("allow-move-number", allowMoveNumber);
+    LizzieFrame.menu.setBtnRankMark();
   }
 
   //  public void toggleNodeColorMode() {
@@ -1477,28 +1637,36 @@ public class Config {
   public void toggleShowWinrate() {
     this.showWinrateGraph = !this.showWinrateGraph;
     uiConfig.put("show-winrate-graph", showWinrateGraph);
-    if (extraMode == 7 && showWinrateGraph) toggleExtraMode(0);
+    if (extraMode == ExtraMode.Min && showWinrateGraph) toggleExtraMode(0);
     Lizzie.frame.refreshContainer();
     Lizzie.frame.refresh();
   }
 
   public boolean showListPane() {
-    if (showListPane && (extraMode == 8 || extraMode == 3 || extraMode == 1)) return true;
-    if (showListPane && (extraMode == 0 || extraMode == 7) && !this.largeWinrateGraph) return true;
+    if (showListPane
+        && (extraMode == ExtraMode.Float_Board
+            || extraMode == ExtraMode.Thinking
+            || extraMode == ExtraMode.Four_Sub)) return true;
+    if (showListPane
+        && (extraMode == ExtraMode.Normal || extraMode == ExtraMode.Min)
+        && !this.largeWinrateGraph) return true;
     else return false;
   }
 
   public void toggleShowListPane() {
     if (showListPane()) showListPane = false;
     else showListPane = true;
-    if (showListPane && extraMode != 8 && extraMode != 3 && extraMode != 1) {
-      if (extraMode != 0 && extraMode != 7) Lizzie.frame.defaultMode();
+    if (showListPane
+        && extraMode != ExtraMode.Float_Board
+        && extraMode != ExtraMode.Thinking
+        && extraMode != ExtraMode.Four_Sub) {
+      if (extraMode != ExtraMode.Normal && extraMode != ExtraMode.Min) Lizzie.frame.defaultMode();
       if (largeWinrateGraph) this.largeWinrateGraph = false;
       uiConfig.put("large-winrate-graph", largeWinrateGraph);
     }
     Lizzie.frame.setHideListScrollpane(showListPane);
     uiConfig.put("show-list-pane", showListPane);
-    if (extraMode == 7 && showListPane) toggleExtraMode(0);
+    if (extraMode == ExtraMode.Min && showListPane) toggleExtraMode(0);
     Lizzie.frame.refreshContainer();
     Lizzie.frame.refresh();
   }
@@ -1510,9 +1678,9 @@ public class Config {
     } else {
       this.largeWinrateGraph = !this.largeWinrateGraph;
     }
-    if (showListPane && !largeWinrateGraph && extraMode == 0) {
+    if (showListPane && !largeWinrateGraph && extraMode == ExtraMode.Normal) {
       Lizzie.frame.setHideListScrollpane(showListPane);
-    } else if (extraMode != 8) {
+    } else if (extraMode != ExtraMode.Float_Board) {
       Lizzie.frame.setHideListScrollpane(false);
     }
     uiConfig.put("large-winrate-graph", largeWinrateGraph);
@@ -1528,7 +1696,7 @@ public class Config {
     } else this.largeSubBoard = !this.largeSubBoard;
     Lizzie.frame.redrawBackgroundAnyway = true;
     uiConfig.put("large-subboard", largeSubBoard);
-    Lizzie.frame.subBoardRenderer.isMouseOver = false;
+    LizzieFrame.subBoardRenderer.isMouseOver = false;
     Lizzie.frame.refreshContainer();
     Lizzie.frame.refresh();
   }
@@ -1543,7 +1711,7 @@ public class Config {
       e.printStackTrace();
     }
     Lizzie.frame.setVarTreeVisible(showVariationGraph);
-    if (extraMode == 7 && showVariationGraph) toggleExtraMode(0);
+    if (extraMode == ExtraMode.Min && showVariationGraph) toggleExtraMode(0);
     Lizzie.frame.refreshContainer();
     Lizzie.frame.refresh();
   }
@@ -1551,7 +1719,7 @@ public class Config {
   public void toggleShowCaptured() {
     this.showCaptured = !this.showCaptured;
     uiConfig.put("show-captured", showCaptured);
-    if (extraMode == 7 && showCaptured) toggleExtraMode(0);
+    if (extraMode == ExtraMode.Min && showCaptured) toggleExtraMode(0);
     Lizzie.frame.refreshContainer();
     Lizzie.frame.refresh();
   }
@@ -1567,7 +1735,7 @@ public class Config {
     Lizzie.frame.commentEditPane.setVisible(false);
     Lizzie.frame.refreshContainer();
     Lizzie.frame.refresh();
-    if (extraMode == 7 && showComment) toggleExtraMode(0);
+    if (extraMode == ExtraMode.Min && showComment) toggleExtraMode(0);
   }
 
   public void toggleShowStatus() {
@@ -1626,7 +1794,7 @@ public class Config {
     Lizzie.frame.refreshContainer();
     Lizzie.frame.refresh();
     uiConfig.put("show-subboard", showSubBoard);
-    if (extraMode == 7 && showSubBoard) toggleExtraMode(0);
+    if (extraMode == ExtraMode.Min && showSubBoard) toggleExtraMode(0);
   }
 
   public void toggleShowSuggestionVariations() {
@@ -1827,65 +1995,65 @@ public class Config {
     boolean windowIsMaximized = Lizzie.frame.getExtendedState() == JFrame.MAXIMIZED_BOTH;
     persistedUi.put("gtp-console-opened", Lizzie.gtpConsole.isVisible());
     JSONArray mainPos = new JSONArray();
+    JSONArray mainOhter = new JSONArray();
+    JSONArray mainList = new JSONArray();
+    JSONArray mainBlunder = new JSONArray();
+    int list1 = Lizzie.frame.listTable.getColumnModel().getColumn(0).getWidth();
+    int list2 = Lizzie.frame.listTable.getColumnModel().getColumn(2).getWidth();
+    int list3 = Lizzie.frame.listTable.getColumnModel().getColumn(3).getWidth();
+    int list4 = Lizzie.frame.listTable.getColumnModel().getColumn(4).getWidth();
+    int length = Lizzie.frame.listTable.getColumnModel().getColumn(5).getWidth();
+    if (length > 0) {
+      mainList.put(list1);
+      mainList.put(list2);
+      mainList.put(list3);
+      mainList.put(list4);
+      mainList.put(length);
+    }
+    int blunder1 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(0).getWidth();
+    int blunder2 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(2).getWidth();
+    int length2 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(3).getWidth();
+    if (length2 > 0) {
+      mainBlunder.put(blunder1);
+      mainBlunder.put(blunder2);
+      mainBlunder.put(length2);
+    }
+
     if (!windowIsMaximized) {
       mainPos.put(Lizzie.frame.getX());
       mainPos.put(Lizzie.frame.getY());
       mainPos.put(Lizzie.frame.getWidth());
       mainPos.put(Lizzie.frame.getHeight());
-      mainPos.put(Lizzie.frame.toolbarHeight);
-      mainPos.put(Lizzie.frame.bowserX);
-      mainPos.put(Lizzie.frame.bowserY);
-      mainPos.put(Lizzie.frame.bowserWidth);
-      mainPos.put(Lizzie.frame.bowserHeight);
-
-      int list1 = Lizzie.frame.listTable.getColumnModel().getColumn(0).getWidth();
-      int list2 = Lizzie.frame.listTable.getColumnModel().getColumn(2).getWidth();
-      int list3 = Lizzie.frame.listTable.getColumnModel().getColumn(3).getWidth();
-      int list4 = Lizzie.frame.listTable.getColumnModel().getColumn(4).getWidth();
-      int length = Lizzie.frame.listTable.getColumnModel().getColumn(5).getWidth();
-      if (length > 0) {
-        mainPos.put(list1);
-        mainPos.put(list2);
-        mainPos.put(list3);
-        mainPos.put(list4);
-        mainPos.put(length);
-      }
-      int blunder1 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(0).getWidth();
-      int blunder2 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(2).getWidth();
-      int length2 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(3).getWidth();
-      if (length2 > 0) {
-        mainPos.put(blunder1);
-        mainPos.put(blunder2);
-        mainPos.put(length2);
-      }
     } else {
-      mainPos.put(Lizzie.frame.toolbarHeight);
-      mainPos.put(Lizzie.frame.bowserX);
-      mainPos.put(Lizzie.frame.bowserY);
-      mainPos.put(Lizzie.frame.bowserWidth);
-      mainPos.put(Lizzie.frame.bowserHeight);
-      int list1 = Lizzie.frame.listTable.getColumnModel().getColumn(0).getWidth();
-      int list2 = Lizzie.frame.listTable.getColumnModel().getColumn(2).getWidth();
-      int list3 = Lizzie.frame.listTable.getColumnModel().getColumn(3).getWidth();
-      int list4 = Lizzie.frame.listTable.getColumnModel().getColumn(4).getWidth();
-      int length = Lizzie.frame.listTable.getColumnModel().getColumn(5).getWidth();
-      if (length > 0) {
-        mainPos.put(list1);
-        mainPos.put(list2);
-        mainPos.put(list3);
-        mainPos.put(list4);
-        mainPos.put(length);
-      }
-      int blunder1 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(0).getWidth();
-      int blunder2 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(2).getWidth();
-      int length2 = Lizzie.frame.blunderTabelBlack.getColumnModel().getColumn(3).getWidth();
-      if (length2 > 0) {
-        mainPos.put(blunder1);
-        mainPos.put(blunder2);
-        mainPos.put(length2);
+      if (Lizzie.frame.noneMaxX > 0
+          && Lizzie.frame.noneMaxY > 0
+          && Lizzie.frame.noneMaxWidth > 0
+          && Lizzie.frame.noneMaxHeight > 0) {
+        mainPos.put(Lizzie.frame.noneMaxX);
+        mainPos.put(Lizzie.frame.noneMaxY);
+        mainPos.put(Lizzie.frame.noneMaxWidth);
+        mainPos.put(Lizzie.frame.noneMaxHeight);
+      } else if (persistedUi.optJSONArray("main-window-position") != null
+          && persistedUi.optJSONArray("main-window-position").length() == 4) {
+        JSONArray pos = persistedUi.getJSONArray("main-window-position");
+        mainPos.put(pos.get(0));
+        mainPos.put(pos.get(1));
+        mainPos.put(pos.get(2));
+        mainPos.put(pos.get(3));
       }
     }
+
+    mainOhter.put(Lizzie.frame.toolbarHeight);
+    mainOhter.put(Lizzie.frame.bowserX);
+    mainOhter.put(Lizzie.frame.bowserY);
+    mainOhter.put(Lizzie.frame.bowserWidth);
+    mainOhter.put(Lizzie.frame.bowserHeight);
+
     persistedUi.put("main-window-position", mainPos);
+    persistedUi.put("main-window-other", mainOhter);
+    persistedUi.put("main-window-list", mainList);
+    persistedUi.put("main-window-blunder", mainBlunder);
+
     JSONArray gtpPos = new JSONArray();
     gtpPos.put(Lizzie.gtpConsole.getX());
     gtpPos.put(Lizzie.gtpConsole.getY());
@@ -1975,37 +2143,39 @@ public class Config {
 
       persistedUi.put("public-kifu-search", searchPos);
     }
-    if (Lizzie.frame.movelistframe != null) {
+    if (Lizzie.frame.moveListFrame != null) {
       JSONArray badmoveslistPos = new JSONArray();
 
-      badmoveslistPos.put(Lizzie.frame.movelistframe.sortnum);
-      badmoveslistPos.put(Lizzie.frame.movelistframe.getX());
-      badmoveslistPos.put(Lizzie.frame.movelistframe.getY());
-      badmoveslistPos.put(Lizzie.frame.movelistframe.getWidth());
-      badmoveslistPos.put(Lizzie.frame.movelistframe.getHeight());
+      badmoveslistPos.put(Lizzie.frame.moveListFrame.sortnum);
+      badmoveslistPos.put(Lizzie.frame.moveListFrame.getX());
+      badmoveslistPos.put(Lizzie.frame.moveListFrame.getY());
+      badmoveslistPos.put(Lizzie.frame.moveListFrame.getWidth());
+      badmoveslistPos.put(Lizzie.frame.moveListFrame.getHeight());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(0).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(0).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(1).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(1).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(2).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(2).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(3).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(3).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(4).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(4).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(5).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(5).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(6).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(6).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(7).getWidth());
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(7).getWidth());
       badmoveslistPos.put(
-          Lizzie.frame.movelistframe.table.getColumnModel().getColumn(8).getWidth());
-      if (Lizzie.frame.movelistframe.table.getColumnCount() == 11) {
+          Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(8).getWidth());
+      if (Lizzie.frame.moveListFrame.table.getColumnCount() == 12) {
         badmoveslistPos.put(
-            Lizzie.frame.movelistframe.table.getColumnModel().getColumn(9).getWidth());
+            Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(9).getWidth());
         badmoveslistPos.put(
-            Lizzie.frame.movelistframe.table.getColumnModel().getColumn(10).getWidth());
+            Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(10).getWidth());
+        badmoveslistPos.put(
+            Lizzie.frame.moveListFrame.table.getColumnModel().getColumn(11).getWidth());
       }
       persistedUi.put("badmoves-list-position", badmoveslistPos);
     } else {
@@ -2018,147 +2188,147 @@ public class Config {
 
     JSONArray toolbarParameter = new JSONArray();
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtFirstAnaMove.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtFirstAnaMove.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtLastAnaMove.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtLastAnaMove.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkAnaTime.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAnaTime.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtAnaTime.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtAnaTime.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkAnaAutoSave.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAnaAutoSave.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
-    if (Lizzie.frame.toolbar.chkAnaPlayouts.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAnaPlayouts.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtAnaPlayouts.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtAnaPlayouts.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkAnaFirstPlayouts.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAnaFirstPlayouts.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtAnaFirstPlayouts.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtAnaFirstPlayouts.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkAutoPlayBlack.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAutoPlayBlack.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
-    if (Lizzie.frame.toolbar.chkAutoPlayWhite.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAutoPlayWhite.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
-    if (Lizzie.frame.toolbar.chkAutoPlayTime.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAutoPlayTime.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtAutoPlayTime.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtAutoPlayTime.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkAutoPlayPlayouts.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAutoPlayPlayouts.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtAutoPlayPlayouts.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtAutoPlayPlayouts.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkAutoPlayFirstPlayouts.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     try {
       toolbarParameter.put(
-          Integer.parseInt(Lizzie.frame.toolbar.txtAutoPlayFirstPlayouts.getText()));
+          Integer.parseInt(LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
 
     try {
       toolbarParameter.put(
-          Integer.parseInt(Lizzie.frame.toolbar.txtenginePkFirstPlayputs.getText()));
+          Integer.parseInt(LizzieFrame.toolbar.txtenginePkFirstPlayputs.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
 
     try {
       toolbarParameter.put(
-          Integer.parseInt(Lizzie.frame.toolbar.txtenginePkFirstPlayputsWhite.getText()));
+          Integer.parseInt(LizzieFrame.toolbar.txtenginePkFirstPlayputsWhite.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
 
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtenginePkTime.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtenginePkTime.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
 
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtenginePkPlayputs.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtenginePkPlayputs.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
     try {
       toolbarParameter.put(
-          Integer.parseInt(Lizzie.frame.toolbar.txtenginePkPlayputsWhite.getText()));
+          Integer.parseInt(LizzieFrame.toolbar.txtenginePkPlayputsWhite.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtenginePkBatch.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtenginePkBatch.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkenginePkBatch.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkenginePkBatch.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
-    if (Lizzie.frame.toolbar.chkenginePkContinue.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkenginePkContinue.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
-    if (Lizzie.frame.toolbar.chkenginePkFirstPlayputs.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkenginePkFirstPlayputs.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
-    if (Lizzie.frame.toolbar.chkenginePkPlayouts.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkenginePkPlayouts.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
-    if (Lizzie.frame.toolbar.chkenginePkTime.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkenginePkTime.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     toolbarParameter.put("-100"); // (Lizzie.frame.toolbar.pkResginWinrate);
     toolbarParameter.put("-100"); // (Lizzie.frame.toolbar.pkResignMoveCounts);
-    toolbarParameter.put(Lizzie.frame.toolbar.AutosavePk);
-    toolbarParameter.put(Lizzie.frame.toolbar.isGenmoveToolbar);
-    toolbarParameter.put(Lizzie.frame.toolbar.anaPanelOrder);
-    toolbarParameter.put(Lizzie.frame.toolbar.enginePkOrder);
-    toolbarParameter.put(Lizzie.frame.toolbar.autoPlayOrder);
-    toolbarParameter.put(Lizzie.frame.toolbar.exChangeToolbar);
-    toolbarParameter.put(Lizzie.frame.toolbar.maxGanmeMove);
-    toolbarParameter.put(Lizzie.frame.toolbar.checkGameMaxMove);
+    toolbarParameter.put(LizzieFrame.toolbar.AutosavePk);
+    toolbarParameter.put(LizzieFrame.toolbar.isGenmoveToolbar);
+    toolbarParameter.put(LizzieFrame.toolbar.anaPanelOrder);
+    toolbarParameter.put(LizzieFrame.toolbar.enginePkOrder);
+    toolbarParameter.put(LizzieFrame.toolbar.autoPlayOrder);
+    toolbarParameter.put(LizzieFrame.toolbar.exChangeToolbar);
+    toolbarParameter.put(LizzieFrame.toolbar.maxGameMoves);
+    toolbarParameter.put(LizzieFrame.toolbar.checkGameMaxMove);
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtenginePkTimeWhite.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtenginePkTimeWhite.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
-    if (Lizzie.frame.toolbar.chkAutoSub.isSelected()) toolbarParameter.put(1);
+    if (LizzieFrame.toolbar.chkAutoSub.isSelected()) toolbarParameter.put(1);
     else toolbarParameter.put(-1);
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtAutoMain.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtAutoMain.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
     try {
-      toolbarParameter.put(Integer.parseInt(Lizzie.frame.toolbar.txtAutoSub.getText()));
+      toolbarParameter.put(Integer.parseInt(LizzieFrame.toolbar.txtAutoSub.getText()));
     } catch (NumberFormatException err) {
       toolbarParameter.put(-1);
     }
     toolbarParameter.put("-100"); // (Lizzie.frame.toolbar.minGanmeMove);
     toolbarParameter.put("-100"); // (Lizzie.frame.toolbar.checkGameMinMove);
-    toolbarParameter.put(Lizzie.frame.toolbar.isRandomMove);
-    toolbarParameter.put(Lizzie.frame.toolbar.randomMove);
-    toolbarParameter.put(Lizzie.frame.toolbar.randomDiffWinrate);
-    toolbarParameter.put(Lizzie.frame.toolbar.chkAnaBlack.isSelected());
-    toolbarParameter.put(Lizzie.frame.toolbar.chkAnaWhite.isSelected());
-    toolbarParameter.put(Lizzie.frame.toolbar.enginePkSaveWinrate);
-    toolbarParameter.put(Lizzie.frame.toolbar.rightMode);
+    toolbarParameter.put(LizzieFrame.toolbar.isRandomMove);
+    toolbarParameter.put(LizzieFrame.toolbar.randomMove);
+    toolbarParameter.put(LizzieFrame.toolbar.randomDiffWinrate);
+    toolbarParameter.put(LizzieFrame.toolbar.chkAnaBlack.isSelected());
+    toolbarParameter.put(LizzieFrame.toolbar.chkAnaWhite.isSelected());
+    toolbarParameter.put(LizzieFrame.toolbar.enginePkSaveWinrate);
+    toolbarParameter.put(LizzieFrame.toolbar.rightMode);
     persistedUi.put("toolbar-parameter", toolbarParameter);
 
     //    JSONArray movecountPos = new JSONArray();
@@ -2167,7 +2337,7 @@ public class Config {
     //    persistedUi.put("movecount-position", movecountPos);
 
     JSONArray winrateGraph = new JSONArray();
-    winrateGraph.put(Lizzie.frame.winrateGraph.mode);
+    winrateGraph.put(LizzieFrame.winrateGraph.mode);
     persistedUi.put("winrate-graph", winrateGraph);
 
     if (Lizzie.frame.independentSubBoard != null) {
@@ -2189,7 +2359,8 @@ public class Config {
     }
     persistedUi.put("fast-commands-width", fastCommandsWidth);
     persistedUi.put("fast-commands-height", fastCommandsHeight);
-    if (!isDeletingPersist) writeConfig(this.persisted, new File(persistFilename));
+    // if (!isDeletingPersist)
+    writeConfig(this.persisted, new File(persistFilename));
   }
 
   public void deletePersist(boolean showMsg) {
@@ -2197,6 +2368,18 @@ public class Config {
     new File(persistFilename).delete();
     isDeletingPersist = true;
     if (showMsg) Utils.showMsg(Lizzie.resourceBundle.getString("Config.deletePersistFile"));
+    else {
+      JSONObject persistConfig = createPersistConfig();
+      try {
+        this.persisted = loadAndMergeConfig(persistConfig, persistFilename, false);
+      } catch (Exception e) {
+        e.printStackTrace();
+        this.persisted = persistConfig;
+      }
+      persistedUi = persisted.getJSONObject("ui-persist");
+      fastCommandsWidth = persistedUi.optInt("fast-commands-width", 500);
+      fastCommandsHeight = persistedUi.optInt("fast-commands-height", 500);
+    }
   }
 
   private Color reverseColor(Color color) {
@@ -2265,19 +2448,16 @@ public class Config {
     uiConfig.put("blunder-playouts-threshold", blunderPlayoutsThreshold);
   }
 
-  //  public void setLanguage(String code) {
-  //    // currently will not set the resource bundle. TODO.
-  //    if (code.equals("ko")) {
-  //      // korean
-  //      if (fontName == null) {
-  //        fontName = "Malgun Gothic";
-  //      }
-  //      if (uiFontName == null) {
-  //        uiFontName = "Malgun Gothic";
-  //      }
-  //      winrateFontName = null;
-  //    }
-  //  }
+  public void saveThreshold(int winRateDiff, int scoreDiff, int playouts, boolean topCurrentMove) {
+    moveListWinrateThreshold = winRateDiff;
+    moveListScoreThreshold = scoreDiff;
+    moveListVisitsThreshold = playouts;
+    moveListTopCurNode = topCurrentMove;
+    uiConfig.putOpt("move-list-winrate-threshold", moveListWinrateThreshold);
+    uiConfig.putOpt("move-list-score-threshold", moveListScoreThreshold);
+    uiConfig.putOpt("move-list-visits-threshold", moveListVisitsThreshold);
+    uiConfig.put("movelist-top-curnode", moveListTopCurNode);
+  }
 
   public void savePanelConfig() {
     uiConfig.put("extra-mode", extraMode);
@@ -2365,8 +2545,7 @@ public class Config {
     boolean showIndependentMain = jsonLayout.optBoolean("independent-main-board");
     boolean showIndependentSub = jsonLayout.optBoolean("independent-sub-board");
     if (showIndependentMain) {
-      Lizzie.frame.extraMode = 8;
-      extraMode = 8;
+      extraMode = ExtraMode.Float_Board;
       if (Lizzie.frame.independentMainBoard == null
           || !Lizzie.frame.independentMainBoard.isVisible())
         Lizzie.frame.toggleIndependentMainBoard();
@@ -2376,8 +2555,7 @@ public class Config {
           jsonLayout.getJSONArray("independent-main-board-position").getInt(2),
           jsonLayout.getJSONArray("independent-main-board-position").getInt(3));
     } else {
-      Lizzie.frame.extraMode = 0;
-      extraMode = 0;
+      extraMode = ExtraMode.Normal;
     }
     if (showIndependentSub) {
       if (Lizzie.frame.independentSubBoard == null || !Lizzie.frame.independentSubBoard.isVisible())
@@ -2399,5 +2577,87 @@ public class Config {
     }
     Lizzie.frame.refreshContainer();
     Lizzie.frame.repaint();
+  }
+
+  public void setMoveNumber(int num) {
+    // TODO Auto-generated method stub
+    Lizzie.config.allowMoveNumber = num;
+    Lizzie.config.uiConfig.put("allow-move-number", Lizzie.config.allowMoveNumber);
+    if (num != 0 && num != -1) {
+      Lizzie.config.onlyLastMoveNumber = 1;
+      Lizzie.config.uiConfig.put("only-last-move-number", 1);
+    }
+    Lizzie.frame.refresh();
+    LizzieFrame.menu.setBtnRankMark();
+  }
+
+  public void saveOtherBoardSize(int width, int height) {
+    otherSizeWidth = width;
+    otherSizeHeight = height;
+    uiConfig.put("other-size-width", otherSizeWidth);
+    uiConfig.put("other-size-height", otherSizeHeight);
+  }
+
+  public int getExtraModeValue(ExtraMode mode) {
+    switch (mode) {
+      case Normal:
+        return 0;
+      case Four_Sub:
+        return 1;
+      case Double_Engine:
+        return 2;
+      case Thinking:
+        return 3;
+      case Min:
+        return 7;
+      case Float_Board:
+        return 8;
+      default:
+        return 0;
+    }
+  }
+
+  public ExtraMode getExtraMode(int value) {
+    // 1=四方图2=双引擎3=思考 8=浮动棋盘模式
+    switch (value) {
+      case 0:
+        return ExtraMode.Normal;
+      case 1:
+        return ExtraMode.Four_Sub;
+      case 2:
+        return ExtraMode.Double_Engine;
+      case 3:
+        return ExtraMode.Thinking;
+      case 7:
+        return ExtraMode.Min;
+      case 8:
+        return ExtraMode.Float_Board;
+      default:
+        return ExtraMode.Normal;
+    }
+  }
+
+  public boolean isDoubleEngineMode() {
+    return extraMode == ExtraMode.Double_Engine;
+  }
+
+  public boolean isThinkingMode() {
+    return extraMode == ExtraMode.Thinking;
+  }
+
+  public boolean isFourSubMode() {
+    return extraMode == ExtraMode.Four_Sub;
+  }
+
+  public boolean isFloatBoardMode() {
+    return extraMode == ExtraMode.Float_Board;
+  }
+
+  public boolean isMinMode() {
+    return extraMode == ExtraMode.Min;
+  }
+
+  public boolean isNormalMode() {
+    return extraMode == ExtraMode.Normal;
   }
 }

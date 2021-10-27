@@ -1,33 +1,26 @@
 package featurecat.lizzie.analysis;
 
 import featurecat.lizzie.Lizzie;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
 import org.json.JSONException;
 
 public class ReadBoardStream extends Thread {
 
   private Socket socket = null;
-  private BufferedReader br = null;
-  private PrintWriter pw = null;
-  private ArrayList<Integer> tempcount = new ArrayList<Integer>();
+  private BufferedReader in;
+  private BufferedOutputStream out;
 
   public ReadBoardStream(Socket s) {
     socket = s;
     try {
-      br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "utf-8"));
-      pw =
-          new PrintWriter(
-              new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8")), true);
+      in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+      out = new BufferedOutputStream(socket.getOutputStream());
       start();
     } catch (Exception e) {
-
       e.printStackTrace();
     }
   }
@@ -36,9 +29,14 @@ public class ReadBoardStream extends Thread {
   public void run() {
     String line;
     try {
-      while ((line = br.readLine()) != null) {
+      while ((line = in.readLine()) != null) {
         //  System.out.println(line);
-        Lizzie.frame.readBoard.parseLine(line, true);
+        Lizzie.frame.readBoard.parseLine(line);
+        if (line.equals("ready"))
+          if (!Lizzie.frame.readBoard.isLoaded) {
+            Lizzie.frame.readBoard.isLoaded = true;
+            checkVersion();
+          }
       }
     } catch (NumberFormatException e) {
       // TODO Auto-generated catch block
@@ -53,7 +51,16 @@ public class ReadBoardStream extends Thread {
   }
 
   public void sendCommand(String command) {
-    pw.println(command);
-    pw.flush();
+    try {
+      out.write((command + "\n").getBytes());
+      out.flush();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      //  e.printStackTrace();
+    }
+  }
+
+  public void checkVersion() {
+    sendCommand("version");
   }
 }

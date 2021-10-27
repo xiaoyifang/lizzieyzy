@@ -79,12 +79,12 @@ public class AnalysisTable {
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
             if (Lizzie.config.isAutoAna) {
-              Lizzie.frame.toolbar.stopAutoAna(true, true);
+              LizzieFrame.toolbar.stopAutoAna(true, true);
               Lizzie.frame.isBatchAna = false;
             } else {
               verifyCurrentKifu();
               Lizzie.frame.isBatchAna = true;
-              StartAnaDialog newgame = new StartAnaDialog(false);
+              StartAnaDialog newgame = new StartAnaDialog(false, Lizzie.frame);
               newgame.setVisible(true);
             }
           }
@@ -103,7 +103,7 @@ public class AnalysisTable {
             } else {
               verifyCurrentKifu();
               Lizzie.frame.isBatchAna = true;
-              StartAnaDialog newgame = new StartAnaDialog(true);
+              StartAnaDialog newgame = new StartAnaDialog(true, Lizzie.frame);
               newgame.setVisible(true);
             }
           }
@@ -252,7 +252,7 @@ public class AnalysisTable {
   protected void verifyCurrentKifu() {
     // TODO Auto-generated method stub
     String firstFileName = Lizzie.frame.Batchfiles.get(Lizzie.frame.BatchAnaNum).getName();
-    if (!Lizzie.frame.fileNameTitle.equals(firstFileName)) {
+    if (!LizzieFrame.fileNameTitle.equals(firstFileName)) {
       Lizzie.frame.loadFile(Lizzie.frame.Batchfiles.get(Lizzie.frame.BatchAnaNum), false, false);
     }
   }

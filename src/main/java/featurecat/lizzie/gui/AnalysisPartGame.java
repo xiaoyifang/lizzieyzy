@@ -78,8 +78,9 @@ public class AnalysisPartGame extends JDialog {
         23);
     getContentPane().add(txtEndMove);
     txtStartMove.setText(
-        Lizzie.config.analysisStartMove > 0 ? Lizzie.config.analysisStartMove + "" : "");
-    txtEndMove.setText(Lizzie.config.analysisEndMove > 0 ? Lizzie.config.analysisEndMove + "" : "");
+        Lizzie.config.analysisStartMove > 0 ? String.valueOf(Lizzie.config.analysisStartMove) : "");
+    txtEndMove.setText(
+        Lizzie.config.analysisEndMove > 0 ? String.valueOf(Lizzie.config.analysisEndMove) : "");
 
     JFontLabel lblNotice =
         new JFontLabel(
@@ -87,6 +88,6 @@ public class AnalysisPartGame extends JDialog {
                 "AnalysisPartGame.lblNotice")); // ("注:手数为空代表从第一手开始分析/分析到最后一手为止");
     lblNotice.setBounds(10, 33, 601, 23);
     getContentPane().add(lblNotice);
-    setLocationRelativeTo(null);
+    setLocationRelativeTo(Lizzie.frame != null ? Lizzie.frame : null);
   }
 }

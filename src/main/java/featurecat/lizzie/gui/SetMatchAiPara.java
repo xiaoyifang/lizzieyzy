@@ -2,10 +2,9 @@ package featurecat.lizzie.gui;
 
 import featurecat.lizzie.Lizzie;
 import java.awt.BorderLayout;
+import java.awt.Window;
 import java.io.IOException;
 import java.text.NumberFormat;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
@@ -13,20 +12,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class SetMatchAiPara extends JDialog {
-  private final ResourceBundle resourceBundle =
-      Lizzie.config.useLanguage == 0
-          ? ResourceBundle.getBundle("l10n.DisplayStrings")
-          : (Lizzie.config.useLanguage == 1
-              ? ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("zh", "CN"))
-              : ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("en", "US")));
-  // private int moves;
-  // private int firstMove = -1;
-  // private int lastMove = 1000;
-  // private double percentsPlayouts;
-  // public final DecimalFormat FORMAT_PERCENT = new DecimalFormat("#0.0000");
-  //  private JTextField txtMatchAiTemprature;
-
-  public SetMatchAiPara() {
+  public SetMatchAiPara(Window owner) {
+    super(owner);
     // setType(Type.POPUP);
     setTitle(Lizzie.resourceBundle.getString("SetMatchAiPara.title")); // ("AI评分设置");
     setAlwaysOnTop(true);
@@ -46,35 +33,6 @@ public class SetMatchAiPara extends JDialog {
                 "SetMatchAiPara.lblAi")); // ("AI评分基于每一手所吻合点的计算量,最高100分最低0分,每一手计算量越接近当手计算量最高值的点,则总评越接近100");
     lblAi.setBounds(10, 10, 762, 29);
     buttonPane.add(lblAi);
-
-    //    JButton btnConfirm =
-    //        new JButton(Lizzie.resourceBundle.getString("SetMatchAiPara.btnConfirm")); // ("确定");
-    //    btnConfirm.addActionListener(
-    //        new ActionListener() {
-    //          public void actionPerformed(ActionEvent e) {
-    //
-    //            if (applyChange()) {
-    //              setVisible(false);
-    //              Lizzie.board.clearNodeInfo(Lizzie.board.getHistory().getStart());
-    //              Lizzie.board.setMovelistAll();
-    //              Lizzie.frame.refresh();
-    //            }
-    //          }
-    //        });
-    //    btnConfirm.setBounds(329, 177, 93, 29);
-    //    buttonPane.add(btnConfirm);
-
-    //    txtMatchAiTemprature = new JTextField();
-    //    txtMatchAiTemprature.setBounds(Lizzie.config.isChinese ? 75 : 118, 151, 41, 18);
-    //    buttonPane.add(txtMatchAiTemprature);
-    //    txtMatchAiTemprature.setText(Lizzie.config.matchAiTemperature + "");
-
-    //    JLabel lblMatchTemprature =
-    //        new JLabel(
-    //            Lizzie.resourceBundle.getString("SetMatchAiPara.lblMatchTemprature")); //
-    // ("设置吻合温度:");
-    //    lblMatchTemprature.setBounds(10, 153, 125, 15);
-    //    buttonPane.add(lblMatchTemprature);
 
     JLabel lblCalculation =
         new JLabel(Lizzie.resourceBundle.getString("SetMatchAiPara.lblCalculation")); // ("计算方式:");

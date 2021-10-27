@@ -1,8 +1,8 @@
 package featurecat.lizzie.rules;
 
 import featurecat.lizzie.Lizzie;
+import featurecat.lizzie.analysis.EngineManager;
 import featurecat.lizzie.analysis.Leelaz;
-import featurecat.lizzie.util.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +17,7 @@ public class BoardHistoryNode {
   public NodeInfo nodeInfoMain2;
   public boolean analyzed = false;
   public boolean diffAnalyzed = false;
+  public boolean isBest = false;
   public ArrayList<ExtraStones> extraStones;
 
   private BoardData data;
@@ -52,7 +53,7 @@ public class BoardHistoryNode {
   public void undoExtraStones() {
     if (extraStones == null || Lizzie.board.isLoadingFile) return;
     for (ExtraStones stone : extraStones) {
-      Lizzie.leelaz.undo();
+      Lizzie.leelaz.undo(true, Lizzie.board.getHistory().getPrevious().get().blackToPlay);
     }
   }
 
@@ -61,7 +62,7 @@ public class BoardHistoryNode {
     for (ExtraStones stone : extraStones) {
       Lizzie.leelaz.playMove(
           stone.isBlack ? Stone.BLACK : Stone.WHITE,
-          Lizzie.board.convertCoordinatesToName(stone.x, stone.y));
+          Board.convertCoordinatesToName(stone.x, stone.y));
     }
   }
 
@@ -91,7 +92,7 @@ public class BoardHistoryNode {
   }
 
   public BoardHistoryNode addOrGoto(BoardData data, boolean newBranch) {
-    return addOrGoto(data, newBranch, false, false);
+    return addOrGoto(data, newBranch, false);
   }
 
   /**
@@ -134,67 +135,8 @@ public class BoardHistoryNode {
     }
   }
 
-  public BoardHistoryNode addOrGoto2(BoardData data, boolean newBranch, boolean changeMove) {
-    if (Lizzie.leelaz != null && !Lizzie.engineManager.isEngineGame) {
-      Lizzie.leelaz.clearBestMoves();
-    }
-    Optional<BoardHistoryNode> next = next(true);
-    boolean nextDummy = next.isPresent() && next.get().isEndDummay();
-    if (!newBranch && nextDummy) {
-      changeMove = true;
-    }
-    if (!newBranch) {
-      for (int i = 0; i < variations.size(); i++) {
-        if (variations.get(i).data.zobrist.equals(data.zobrist)) {
-          //	          if (i != 0 && changeMove) {
-          //	            break;
-          //	          }
-          Lizzie.board.clearAfterMove();
-          return variations.get(i);
-        }
-      }
-    }
-    if (!this.previous.isPresent()) {
-      data.moveMNNumber = 1;
-    }
-    if (Lizzie.config.newMoveNumberInBranch && !variations.isEmpty() && !changeMove) {
-      if (!newBranch) {
-        data.moveNumberList = new int[Board.boardWidth * Board.boardHeight];
-        data.moveMNNumber = -1;
-      }
-      if (data.moveMNNumber == -1) {
-        data.moveMNNumber = data.dummy ? 0 : 1;
-      }
-      data.lastMove.ifPresent(
-          m -> data.moveNumberList[Board.getIndex(m[0], m[1])] = data.moveMNNumber);
-    }
-    BoardHistoryNode node = new BoardHistoryNode(data);
-    if (changeMove) {
-      //   Optional<BoardHistoryNode> next = next(true);
-      next.ifPresent(
-          n -> {
-            node.variations = n.variations;
-            n.previous = null;
-            n.variations.stream().forEach(v -> v.previous = Optional.of(node));
-            variations.set(0, node);
-          });
-
-    } else {
-      // Add node
-      variations.add(node);
-    }
-    node.previous = Optional.of(this);
-    Lizzie.board.clearAfterMove();
-    return node;
-  }
-
-  public BoardHistoryNode addOrGoto(
-      BoardData data, boolean newBranch, boolean changeMove, boolean clearAfterMove) {
-
-    if (!Lizzie.board.isLoadingFile
-        && Lizzie.leelaz != null
-        && !Lizzie.engineManager.isEngineGame
-        && clearAfterMove) {
+  public BoardHistoryNode addOrGoto(BoardData data, boolean newBranch, boolean changeMove) {
+    if (!Lizzie.board.isLoadingFile && Lizzie.leelaz != null && !EngineManager.isEngineGame) {
       Lizzie.leelaz.clearBestMoves();
     }
     Optional<BoardHistoryNode> next = next(true);
@@ -214,8 +156,8 @@ public class BoardHistoryNode {
           if (i != 0 && changeMove) {
             break;
           }
-          if (clearAfterMove) Lizzie.board.clearAfterMove();
-          if (Lizzie.config.playSound) Utils.playVoiceFile();
+          // if (Lizzie.config.playSound) Utils.playVoiceFile();
+          Lizzie.board.clearAfterMove();
           return variations.get(i);
         }
       }
@@ -248,81 +190,19 @@ public class BoardHistoryNode {
 
     } else {
       // Add node
+      if (variations.size() == 0) {
+        if (this.data.blackToPlay != node.getData().lastMoveColor.isBlack()) {
+          this.data.blackToPlay = node.getData().lastMoveColor.isBlack();
+        }
+      }
       variations.add(node);
     }
     node.previous = Optional.of(this);
-    if (clearAfterMove) Lizzie.board.clearAfterMove();
-    if (Lizzie.config.playSound) Utils.playVoiceFile();
+    // if (Lizzie.config.playSound) Utils.playVoiceFile();
+    Lizzie.board.clearAfterMove();
     return node;
   }
 
-  //  private void clearAfterMove() {
-  //    if (Lizzie.frame.priorityMoveCoords.size() > 0) Lizzie.frame.priorityMoveCoords.clear();
-  //    if (Lizzie.board.isLoadingFile) return;
-  //    if (Lizzie.frame.clickOrder != -1) {
-  //      Lizzie.frame.clickOrder = -1;
-  //      Lizzie.frame.hasMoveOutOfList = false;
-  //      Lizzie.frame.boardRenderer.startNormalBoard();
-  //      Lizzie.frame.suggestionclick = Lizzie.frame.outOfBoundCoordinate;
-  //      Lizzie.frame.mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
-  //      Lizzie.frame.boardRenderer.clearBranch();
-  //      Lizzie.frame.selectedorder = -1;
-  //      Lizzie.frame.currentRow = -1;
-  //    }
-  //    Lizzie.frame.clickbadmove=Lizzie.frame.outOfBoundCoordinate;
-  //    if (Lizzie.frame.toolbar.chkAutoSub.isSelected()) {
-  //      Lizzie.frame.toolbar.displayedSubBoardBranchLength = 1;
-  //      Lizzie.frame.subBoardRenderer.setDisplayedBranchLength(1);
-  //      Lizzie.frame.subBoardRenderer.wheeled = false;
-  //    } else {
-  //      Lizzie.frame.subBoardRenderer.clearAfterMove();
-  //    }
-  //    Lizzie.frame.subBoardRenderer.bestmovesNum = 0;
-  //    if (Lizzie.frame.extraMode == 1) {
-  //      Lizzie.frame.subBoardRenderer2.bestmovesNum = 1;
-  //      Lizzie.frame.subBoardRenderer3.bestmovesNum = 2;
-  //      Lizzie.frame.subBoardRenderer4.bestmovesNum = 3;
-  //      Lizzie.frame.subBoardRenderer.clearAfterMove();
-  //      Lizzie.frame.subBoardRenderer2.clearAfterMove();
-  //      Lizzie.frame.subBoardRenderer3.clearAfterMove();
-  //      Lizzie.frame.subBoardRenderer4.clearAfterMove();
-  //    }
-  //    if (Lizzie.frame.analysisFrame != null && Lizzie.frame.analysisFrame.isVisible()) {
-  //      Lizzie.frame.analysisFrame.selectedorder = -1;
-  //      Lizzie.frame.analysisFrame.clickOrder = -1;
-  //    }
-  //    if (Lizzie.frame.analysisFrame2 != null && Lizzie.frame.analysisFrame2.isVisible()) {
-  //      Lizzie.frame.analysisFrame2.selectedorder = -1;
-  //      Lizzie.frame.analysisFrame2.clickOrder = -1;
-  //    }
-  //    if (Lizzie.frame.independentMainBoard != null) {
-  //      Lizzie.frame.independentMainBoard.mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
-  //      Lizzie.frame.independentMainBoard.boardRenderer.startNormalBoard();
-  //      Lizzie.frame.independentMainBoard.boardRenderer.clearBranch();
-  //      Lizzie.frame.independentMainBoard.boardRenderer.clearSuggestionImage();
-  //      Lizzie.frame.independentMainBoard.boardRenderer.removedrawmovestone();
-  //    }
-  //    if (Lizzie.frame.floatBoard != null) {
-  //      Lizzie.frame.floatBoard.mouseOverCoordinate = Lizzie.frame.outOfBoundCoordinate;
-  //      Lizzie.frame.floatBoard.boardRenderer.startNormalBoard();
-  //      Lizzie.frame.floatBoard.boardRenderer.clearBranch();
-  //      Lizzie.frame.floatBoard.boardRenderer.clearSuggestionImage();
-  //      Lizzie.frame.floatBoard.boardRenderer.removedrawmovestone();
-  //    }
-  //    if (Lizzie.frame.independentSubBoard != null) {
-  //      Lizzie.frame.independentSubBoard.subBoardRenderer.clearAfterMove();
-  //
-  //      if (Lizzie.frame.toolbar.chkAutoSub.isSelected()) {
-  //        Lizzie.frame.independentSubBoard.subBoardRenderer.setDisplayedBranchLength(1);
-  //        Lizzie.frame.independentSubBoard.subBoardRenderer.wheeled = false;
-  //      } else {
-  //        Lizzie.frame.independentSubBoard.subBoardRenderer.clearAfterMove();
-  //      }
-  //    }
-  //    // Lizzie.frame.isShowingHeatmap = false;
-  //    Lizzie.frame.boardRenderer.clearSuggestionImage();
-  //    Lizzie.frame.clearCommentPos();
-  //  }
   /** @return data stored on this node */
   public BoardData getData() {
     return data;
@@ -747,6 +627,7 @@ public class BoardHistoryNode {
       if (!cur.compare(node)) {
         BoardData sData = cur.getData();
         sData.sync(node.getData());
+        if (sData.getPlayouts() > 0) sData.comment = SGFParser.formatComment(cur);
         if (node.numberOfChildren() > 0) {
           for (int i = 0; i < node.numberOfChildren(); i++) {
             if (node.getVariation(i).isPresent()) {

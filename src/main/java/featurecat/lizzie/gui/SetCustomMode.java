@@ -1,5 +1,6 @@
 package featurecat.lizzie.gui;
 
+import featurecat.lizzie.ExtraMode;
 import featurecat.lizzie.Lizzie;
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -8,6 +9,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -47,8 +49,8 @@ public class SetCustomMode extends JDialog {
   private boolean isSetCustom;
   private boolean oriPondering;
 
-  public SetCustomMode(int index, boolean isSetCustom) {
-    //  super(owner);
+  public SetCustomMode(int index, boolean isSetCustom, Window owner) {
+    super(owner);
     this.index = index;
     this.isSetCustom = isSetCustom;
     oriPondering = Lizzie.leelaz.isPondering();
@@ -102,7 +104,7 @@ public class SetCustomMode extends JDialog {
         Lizzie.frame.independentMainBoard != null && Lizzie.frame.independentMainBoard.isVisible();
     showFloatSubBoard =
         Lizzie.frame.independentSubBoard != null && Lizzie.frame.independentSubBoard.isVisible();
-    isFloatMode = Lizzie.frame.extraMode == 8;
+    isFloatMode = Lizzie.config.isFloatBoardMode();
   }
 
   private void restoreTempConfig() {
@@ -116,8 +118,8 @@ public class SetCustomMode extends JDialog {
     Lizzie.config.largeWinrateGraph = showBigWinrate;
     Lizzie.frame.BoardPositionProportion = boardPositionProportion;
     Lizzie.frame.setVarTreeVisible(Lizzie.config.showVariationGraph);
-    if (isFloatMode) Lizzie.frame.extraMode = 8;
-    else Lizzie.frame.extraMode = 0;
+    if (isFloatMode) Lizzie.config.extraMode = ExtraMode.Float_Board;
+    else Lizzie.config.extraMode = ExtraMode.Normal;
     if (showFloatMainBoard) {
       if (Lizzie.frame.independentMainBoard == null
           || !Lizzie.frame.independentMainBoard.isVisible())
@@ -154,7 +156,7 @@ public class SetCustomMode extends JDialog {
     initDialogPane(contentPane);
 
     pack();
-    setLocationRelativeTo(getOwner());
+    setLocationRelativeTo(Lizzie.frame);
   }
 
   private void initDialogPane(Container contentPane) {
@@ -346,13 +348,12 @@ public class SetCustomMode extends JDialog {
     contentPanel.add(sldBoardPositionProportion);
 
     floatMainBoard = new JCheckBox();
-    floatMainBoard.setSelected(Lizzie.config.extraMode == 8);
+    floatMainBoard.setSelected(Lizzie.config.isFloatBoardMode());
     floatMainBoard.addActionListener(
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
             if (floatMainBoard.isSelected()) {
-              Lizzie.frame.extraMode = 8;
-              Lizzie.config.extraMode = 8;
+              Lizzie.config.extraMode = ExtraMode.Float_Board;
               bigWinrate.setSelected(false);
               bigWinrate.setEnabled(false);
               bigSubBoard.setSelected(false);
@@ -361,8 +362,7 @@ public class SetCustomMode extends JDialog {
                   || !Lizzie.frame.independentMainBoard.isVisible())
                 Lizzie.frame.toggleIndependentMainBoard();
             } else {
-              Lizzie.frame.extraMode = 0;
-              Lizzie.config.extraMode = 0;
+              Lizzie.config.extraMode = ExtraMode.Normal;
               if (Lizzie.frame.independentMainBoard != null
                   && Lizzie.frame.independentMainBoard.isVisible())
                 Lizzie.frame.toggleIndependentMainBoard();

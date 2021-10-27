@@ -12,16 +12,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -30,7 +25,6 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
-@SuppressWarnings("serial")
 public class LoadEngine extends JPanel {
   public static Config config;
   public TableModel dataModel;
@@ -85,15 +79,12 @@ public class LoadEngine extends JPanel {
           : (Lizzie.config.useLanguage == 1
               ? ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("zh", "CN"))
               : ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("en", "US")));
-  private String osName;
-  private BufferedInputStream inputStream;
-  private Path curPath;
 
   public LoadEngine() {
     // super(new BorderLayout());
 
-    curPath = (new File("")).getAbsoluteFile().toPath();
-    osName = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
+    (new File("")).getAbsoluteFile().toPath();
+    System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
     this.setLayout(null);
     dataModel = getTableModel();
     table = new JTable(dataModel);
@@ -107,7 +98,7 @@ public class LoadEngine extends JPanel {
     table.getTableHeader().setResizingAllowed(false);
     TableCellRenderer tcr = new ColorTableCellRenderer();
     table.setDefaultRenderer(Object.class, tcr);
-    table.setRowHeight(Lizzie.config.menuHeight);
+    table.setRowHeight(Config.menuHeight);
     table.getTableHeader().setFont(headFont);
     table
         .getTableHeader()
@@ -120,9 +111,9 @@ public class LoadEngine extends JPanel {
     table.setFont(winrateFont);
 
     tablepanel = new JPanel(new BorderLayout());
-    tablepanel.setBounds(0, 0, 885, 429);
+    tablepanel.setBounds(0, 0, 895, 429);
     this.add(tablepanel);
-    selectpanel.setBounds(0, 432, 900, 530);
+    selectpanel.setBounds(0, 432, 910, 530);
     this.add(selectpanel);
     scrollpane = new JScrollPane(table);
 
@@ -427,103 +418,9 @@ public class LoadEngine extends JPanel {
 
     public Component getTableCellRendererComponent(
         JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-
-      // if (Lizzie.board.convertNameToCoordinates(table.getValueAt(row,
-      // 2).toString())[0]
-      // == Lizzie.frame.clickbadmove[0]
-      // && Lizzie.board.convertNameToCoordinates(table.getValueAt(row,
-      // 2).toString())[1]
-      // == Lizzie.frame.clickbadmove[1]) {
-
-      // Color hsbColor =
-      // Color.getHSBColor(
-      // Color.RGBtoHSB(238, 221, 130, null)[0],
-      // Color.RGBtoHSB(238, 221, 130, null)[1],
-      // Color.RGBtoHSB(238, 221, 130, null)[2]);
-      // setBackground(hsbColor);
-      // if (Math.abs(Float.parseFloat(table.getValueAt(row, 3).toString())) >= 5
-      // && Math.abs(Float.parseFloat(table.getValueAt(row, 3).toString())) <= 10) {
-      // Color hsbColor2 =
-      // Color.getHSBColor(
-      // Color.RGBtoHSB(255, 153, 18, null)[0],
-      // Color.RGBtoHSB(255, 153, 18, null)[1],
-      // Color.RGBtoHSB(255, 153, 18, null)[2]);
-      // setForeground(hsbColor2);
-      // } else if (Math.abs(Float.parseFloat(table.getValueAt(row, 3).toString())) >
-      // 10) {
-      // setForeground(Color.RED);
-      // } else {
-      // setForeground(Color.BLACK);
-      // }
-      // return super.getTableCellRendererComponent(table, value, isSelected, false,
-      // row,
-      // column);
-      // }
-      // if (Math.abs(Float.parseFloat(table.getValueAt(row, 3).toString())) >= 5
-      // && Math.abs(Float.parseFloat(table.getValueAt(row, 3).toString())) <= 10) {
-      // Color hsbColor =
-      // Color.getHSBColor(
-      // Color.RGBtoHSB(255, 153, 18, null)[0],
-      // Color.RGBtoHSB(255, 153, 18, null)[1],
-      // Color.RGBtoHSB(255, 153, 18, null)[2]);
-      // setBackground(Color.WHITE);
-      // setForeground(hsbColor);
-      // return super.getTableCellRendererComponent(table, value, isSelected, false,
-      // row,
-      // column);
-      // }
-      // if (Math.abs(Float.parseFloat(table.getValueAt(row, 3).toString())) > 10) {
-      // setBackground(Color.WHITE);
-      // setForeground(Color.RED);
-      // return super.getTableCellRendererComponent(table, value, isSelected, false,
-      // row,
-      // column);
-      // } else
       {
         return renderer.getTableCellRendererComponent(table, value, isSelected, false, row, column);
       }
-    }
-  }
-
-  private String relativizePath(Path path) {
-    Path relatPath;
-    if (path.startsWith(curPath)) {
-      relatPath = curPath.relativize(path);
-    } else {
-      relatPath = path;
-    }
-    return relatPath.toString();
-  }
-
-  private void getCommandHelp() {
-
-    List<String> commands = new ArrayList<String>();
-    commands.add(enginePath);
-    commands.add("-h");
-
-    ProcessBuilder processBuilder = new ProcessBuilder(commands);
-    processBuilder.directory();
-    processBuilder.redirectErrorStream(true);
-    try {
-      Process process = processBuilder.start();
-      inputStream = new BufferedInputStream(process.getInputStream());
-      ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-      executor.execute(this::read);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private void read() {
-    try {
-      int c;
-      StringBuilder line = new StringBuilder();
-      while ((c = inputStream.read()) != -1) {
-        line.append((char) c);
-      }
-      commandHelp = line.toString();
-    } catch (IOException e) {
-      e.printStackTrace();
     }
   }
 
@@ -665,7 +562,6 @@ public class LoadEngine extends JPanel {
         return "";
       }
 
-      @SuppressWarnings("unchecked")
       public Object getValueAt(int row, int col) {
         ArrayList<EngineData> EngineDatas = Utils.getEngineData();
         if (row > (EngineDatas.size() - 1)) {
@@ -730,8 +626,8 @@ public class LoadEngine extends JPanel {
           }
         });
 
-    engjf.setBounds(50, 50, 890, 510);
-    Lizzie.setFrameSize(engjf, 890, 510);
+    engjf.setBounds(50, 50, 900, 510);
+    Lizzie.setFrameSize(engjf, 900, 510);
     engjf.setResizable(false);
     try {
       engjf.setIconImage(ImageIO.read(LoadEngine.class.getResourceAsStream("/assets/logo.png")));

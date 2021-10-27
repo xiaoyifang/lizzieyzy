@@ -18,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.util.Locale;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -84,7 +85,7 @@ public class ScoreResult extends JDialog {
             + Config.menuHeight
             + Lizzie.frame.topPanel.getHeight();
     int boardLenght = Lizzie.frame.maxSize;
-    if (Lizzie.frame.extraMode == 8 && Lizzie.frame.independentMainBoard != null) {
+    if (Lizzie.config.isFloatBoardMode() && Lizzie.frame.independentMainBoard != null) {
       frameX = Lizzie.frame.independentMainBoard.getX();
       frameY = Lizzie.frame.independentMainBoard.getY();
       boardX = 0;
@@ -174,7 +175,6 @@ public class ScoreResult extends JDialog {
 
   public void setScore(
       int blackAlive, int blackPoint, int whiteAlive, int whitePoint, double komi) {
-    // aaa
     double blackAll = blackAlive + blackPoint;
     double whiteAll = whiteAlive + whitePoint + komi;
     blackScore.setText(
@@ -197,7 +197,7 @@ public class ScoreResult extends JDialog {
         (blackAll >= whiteAll
                 ? Lizzie.resourceBundle.getString("ScoreResult.blackWin")
                 : Lizzie.resourceBundle.getString("ScoreResult.whiteWin"))
-            + String.format("%.1f", Math.abs(blackAll - whiteAll))
+            + String.format(Locale.ENGLISH, "%.1f", Math.abs(blackAll - whiteAll))
             + Lizzie.resourceBundle.getString("ScoreResult.points"));
     if (blackAll >= whiteAll) {
       scoreResult.setBackground(Color.BLACK);

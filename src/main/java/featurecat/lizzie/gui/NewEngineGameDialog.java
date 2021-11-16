@@ -36,9 +36,9 @@ public class NewEngineGameDialog extends JDialog {
     FORMAT_HANDICAP.setMaximumIntegerDigits(99999);
   }
 
-  private JPanel dialogPane = new JPanel();
-  private JPanel contentPanel = new JPanel();
-  private JPanel buttonBar = new JPanel();
+  private PanelWithToolTips dialogPane = new PanelWithToolTips();
+  private PanelWithToolTips contentPanel = new PanelWithToolTips();
+  private PanelWithToolTips buttonBar = new PanelWithToolTips();
   private JFontButton okButton = new JFontButton();
 
   // private JCheckBox checkBoxPlayerIsBlack;
@@ -54,9 +54,9 @@ public class NewEngineGameDialog extends JDialog {
   private JFontTextField txtresignSettingWhite;
   private JFontTextField txtresignSettingWhite2;
 
-  public JComboBox enginePkBlack;
-  public JComboBox enginePkWhite;
-  private JComboBox cbxRandomSgf;
+  public JComboBox<String> enginePkBlack;
+  public JComboBox<String> enginePkWhite;
+  private JComboBox<String> cbxRandomSgf;
 
   private JCheckBox chkDisableWRNInGame;
   private JCheckBox chkUseAdvanceTime;
@@ -80,6 +80,7 @@ public class NewEngineGameDialog extends JDialog {
   // private final ResourceBundle resourceBundle = Lizzie.resourceBundle;
   private JFontTextField txtBlackAdvanceTime;
   private JFontTextField txtWhiteAdvanceTime;
+  private Window thisDialog = this;
 
   private void initComponents() {
     // if (Lizzie.config.showHiddenYzy) setMinimumSize(new Dimension(380, 330));
@@ -591,9 +592,9 @@ public class NewEngineGameDialog extends JDialog {
         new JFontLabel(
             Lizzie.resourceBundle.getString("NewEngineGameDialog.lblBatchGame")); // ("多盘");
     lblBatchGame.setBounds(
-        Lizzie.config.isFrameFontSmall() ? 279 : (Lizzie.config.isFrameFontMiddle() ? 283 : 288),
+        Lizzie.config.isFrameFontSmall() ? 279 : (Lizzie.config.isFrameFontMiddle() ? 283 : 328),
         240,
-        160,
+        100,
         20);
     LizzieFrame.toolbar.chkenginePkBatch.setBounds(
         Lizzie.config.isFrameFontSmall() ? 350 : (Lizzie.config.isFrameFontMiddle() ? 375 : 410),
@@ -680,8 +681,7 @@ public class NewEngineGameDialog extends JDialog {
     }
     ImageIcon iconSettings = new ImageIcon();
     try {
-      iconSettings.setImage(
-          ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/settings.png")));
+      iconSettings.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/settings.png")));
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -692,7 +692,8 @@ public class NewEngineGameDialog extends JDialog {
           public void actionPerformed(ActionEvent e) {
             Utils.showHtmlMessageModal(
                 Lizzie.resourceBundle.getString("AdvanceTimeSettings.title"),
-                Lizzie.resourceBundle.getString("AdvanceTimeSettings.describe"));
+                Lizzie.resourceBundle.getString("AdvanceTimeSettings.describe"),
+                thisDialog);
           }
         });
     aboutAdvanceTimeSettings.setBounds(125, 91, 18, 18);
@@ -823,7 +824,7 @@ public class NewEngineGameDialog extends JDialog {
     contentPanel.add(lblsgf);
     // lblsgf.setEnabled(LizzieFrame.toolbar.chkenginePkBatch.isSelected());
 
-    cbxRandomSgf = new JFontComboBox();
+    cbxRandomSgf = new JFontComboBox<String>();
     cbxRandomSgf.addItem(
         Lizzie.resourceBundle.getString("NewEngineGameDialog.cbxRandomSgf1")); // ("顺序");
     cbxRandomSgf.addItem(

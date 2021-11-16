@@ -42,8 +42,8 @@ public class Lizzie {
   public static Board board;
   public static Leelaz leelaz;
   public static Leelaz leelaz2;
-  public static String lizzieVersion = "yzy2.4.5";
-  public static String checkVersion = "211027";
+  public static String lizzieVersion = "yzy2.4.6";
+  public static String checkVersion = "211112";
   public static boolean readMode = false;
   private static String[] mainArgs;
   public static EngineManager engineManager;
@@ -81,32 +81,21 @@ public class Lizzie {
     }
     if (config.logConsoleToFile) {
       PrintStream oldPrintStream = System.out;
-      FileOutputStream bos = new FileOutputStream("LastConsoleLogs_" + lizzieVersion + ".txt");
+      FileOutputStream bos =
+          new FileOutputStream("LastConsoleLogs_" + lizzieVersion + ".txt", true);
       MultiOutputStream multi = new MultiOutputStream(new PrintStream(bos), oldPrintStream);
       System.setOut(new PrintStream(multi));
 
       PrintStream oldErrorPrintStream = System.err;
-      FileOutputStream bosError = new FileOutputStream("LastErrorLogs_" + lizzieVersion + ".txt");
+      FileOutputStream bosError =
+          new FileOutputStream("LastErrorLogs_" + lizzieVersion + ".txt", true);
       MultiOutputStream multiError =
           new MultiOutputStream(new PrintStream(bosError), oldErrorPrintStream);
       System.setErr(new PrintStream(multiError));
-      //    Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-      //        @Override
-      //        public void uncaughtException(Thread thread, Throwable ex) {
-      //        	ex.printStackTrace();
-      //            StringWriter sw = new StringWriter();
-      //            ex.printStackTrace(new PrintWriter(sw, true));
-      //            try {
-      //            	bosError.write("===========\n".getBytes());
-      //            	bosError.write(sw.toString().getBytes());
-      //			} catch (IOException e) {
-      //				// TODO Auto-generated catch block
-      //				e.printStackTrace();
-      //			}
-      //        }
-      //    });
+      String sf = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date());
+      bos.write((sf + "\n").getBytes());
+      bosError.write((sf + "\n").getBytes());
     }
-    // -Dsun.java2d.uiScale=1.0
     // -Dsun.java2d.uiScale.enabled=false
     // -Dsun.java2d.win.uiScaleX=1.25 -Dsun.java2d.win.uiScaleY=1.25
     // -Dsun.java2d.win.uiScaleX=125% -Dsun.java2d.win.uiScaleY=125%
@@ -428,7 +417,7 @@ public class Lizzie {
       config.deletePersist(false);
     }
     try {
-      engineManager.forceKillAllEngines();
+      if (engineManager != null) engineManager.forceKillAllEngines();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -438,6 +427,11 @@ public class Lizzie {
       } catch (Exception e) {
         e.printStackTrace();
       }
+    try {
+      frame.shutdownClockHelper();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     Lizzie.frame.destroyEstimateEngine();
     Lizzie.frame.destroyAnalysisEngine();
     System.exit(0);

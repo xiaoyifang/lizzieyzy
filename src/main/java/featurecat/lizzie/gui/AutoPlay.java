@@ -11,13 +11,12 @@ import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 public class AutoPlay extends JFrame {
 
-  private JPanel contentPane;
+  private PanelWithToolTips contentPane;
   private JTextField txtAutoPlayMain;
   private JTextField txtAutoPlaySub;
   private final ResourceBundle resourceBundle = Lizzie.resourceBundle;
@@ -25,21 +24,18 @@ public class AutoPlay extends JFrame {
   private JTextField txtDisplayEntireVariationFirst;
   /** Create the frame. */
   public AutoPlay() {
-    setBounds(100, 100, 491, 233);
-    Lizzie.setFrameSize(
-        this,
-        Lizzie.config.isFrameFontSmall() ? 270 : Lizzie.config.isFrameFontMiddle() ? 280 : 330,
-        175);
+    // setBounds(100, 100, 491, 233);
+    Lizzie.setFrameSize(this, 330, 205);
     setResizable(false);
     if (Lizzie.frame != null) setAlwaysOnTop(Lizzie.frame.isAlwaysOnTop());
     setTitle(resourceBundle.getString("AutoPlay.title")); // "设置自动播放");
     setLocationRelativeTo(Lizzie.frame);
-    contentPane = new JPanel();
+    contentPane = new PanelWithToolTips();
     contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
     setContentPane(contentPane);
     contentPane.setLayout(null);
     try {
-      this.setIconImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/logo.png")));
+      this.setIconImage(ImageIO.read(getClass().getResourceAsStream("/assets/logo.png")));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -147,7 +143,7 @@ public class AutoPlay extends JFrame {
             if (chkAutoPlayMainboard.isSelected() || chkAutoPlaySubboard.isSelected()) {
               if (chkAutoPlayMainboard.isSelected()) {
                 LizzieFrame.toolbar.chkAutoMain.setSelected(true);
-                LizzieFrame.toolbar.autoPlayMain();
+                LizzieFrame.toolbar.autoPlayMain(false);
                 // }
               } else {
                 LizzieFrame.toolbar.chkAutoMain.setSelected(false);

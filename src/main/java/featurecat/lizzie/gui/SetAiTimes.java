@@ -48,11 +48,12 @@ public class SetAiTimes extends JDialog {
   JCheckBox chkUseNormal;
   JCheckBox chkUseAdvTime;
   JCheckBox chkUseKataTime;
-  JComboBox kataTimeComboBox;
+  JComboBox<String> kataTimeComboBox;
   private JTextField txtKataTimeSaveMins;
   private JTextField txtKataTimeByoyomiSecs;
   private JTextField txtKataTimeByoyomiTimes;
   private JTextField txtKataTimeFisherIncrementSecs;
+  private Window thisDialog = this;
 
   public SetAiTimes(Window owner) {
     super(owner);
@@ -176,7 +177,7 @@ public class SetAiTimes extends JDialog {
         103,
         800,
         38);
-    kataTimeComboBox = new JFontComboBox();
+    kataTimeComboBox = new JFontComboBox<String>();
     kataTimeComboBox.addItem(resourceBundle.getString("NewGameDialog.kataTime.byoyomi")); // "读秒制");
     kataTimeComboBox.addItem(resourceBundle.getString("NewGameDialog.kataTime.fisher")); // "加秒制");
     kataTimeComboBox.addItem(
@@ -286,8 +287,7 @@ public class SetAiTimes extends JDialog {
     ImageIcon iconSettings = new ImageIcon();
     try {
       this.setIconImage(ImageIO.read(MoreEngines.class.getResourceAsStream("/assets/logo.png")));
-      iconSettings.setImage(
-          ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/settings.png")));
+      iconSettings.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/settings.png")));
     } catch (IOException e1) {
       // TODO Auto-generated catch block
       e1.printStackTrace();
@@ -298,7 +298,8 @@ public class SetAiTimes extends JDialog {
           public void actionPerformed(ActionEvent e) {
             Utils.showHtmlMessageModal(
                 resourceBundle.getString("AdvanceTimeSettings.title"),
-                resourceBundle.getString("AdvanceTimeSettings.describe"));
+                resourceBundle.getString("AdvanceTimeSettings.describe"),
+                thisDialog);
           }
         });
     btnNewButton.setBounds(144, 77, 18, 18);

@@ -90,7 +90,7 @@ public class BottomToolbar extends JPanel {
   JButton share;
   JButton flashAnalyze;
 
-  JPanel buttonPane;
+  PanelWithToolTips buttonPane;
   //  JPanel buttonPane2;
 
   JButton rightMove;
@@ -165,8 +165,8 @@ public class BottomToolbar extends JPanel {
   public JCheckBox chkAnaBlack;
   public JCheckBox chkAnaWhite;
 
-  public JCheckBox chkShowBlack;
-  public JCheckBox chkShowWhite;
+  private JCheckBox chkShowBlack;
+  private JCheckBox chkShowWhite;
 
   public JCheckBox chkAutoMain;
   public JCheckBox chkAutoSub;
@@ -266,9 +266,9 @@ public class BottomToolbar extends JPanel {
   public JTextField txtenginePkFirstPlayputsWhite;
   public JTextField txtenginePkBatch;
   Message msg;
-  public JComboBox enginePkBlack;
+  public JComboBox<String> enginePkBlack;
   ItemListener enginePkBlackLis;
-  public JComboBox enginePkWhite;
+  public JComboBox<String> enginePkWhite;
   ItemListener enginePkWhiteLis;
 
   private ImageIcon iconUp;
@@ -342,14 +342,14 @@ public class BottomToolbar extends JPanel {
     iconUp = new ImageIcon();
 
     try {
-      iconUp.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/up.png")));
+      iconUp.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/up.png")));
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
     iconDown = new ImageIcon();
     try {
-      iconDown.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/down.png")));
+      iconDown.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/down.png")));
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -360,7 +360,7 @@ public class BottomToolbar extends JPanel {
     //    buttonPane2.setLayout(null);
     //   this.add(buttonPane2);
 
-    buttonPane = new JPanel();
+    buttonPane = new PanelWithToolTips();
     buttonPane.setLayout(null);
     this.add(buttonPane);
 
@@ -472,42 +472,39 @@ public class BottomToolbar extends JPanel {
     rightMove.setMargin(new Insets(0, 0, 0, 0));
     leftMove.setMargin(new Insets(0, 0, 0, 0));
 
-    int extraLength = 0;
-    if (System.getProperty("os.name").toLowerCase().contains("mac")
-        && !Lizzie.config.useJavaLooks) {
-      extraLength = 20;
-    }
-
-    if (Config.frameFontSize > 12) {
-      extraLength += (Config.frameFontSize - 12) * 5;
-    }
-    autoPlay.setSize(60 + extraLength, 26);
-    flashAnalyze.setSize((Lizzie.config.isChinese ? 60 : 80) + extraLength, 26);
-    deleteMove.setSize((Lizzie.config.isChinese ? 40 : 50) + extraLength, 26);
-    badMoves.setSize(60 + extraLength, 26);
-    share.setSize(40 + extraLength, 26);
-    liveButton.setSize(40 + extraLength, 26);
-    kataEstimate.setSize((Lizzie.config.isChinese ? 60 : 82) + extraLength, 26);
-    batchOpen.setSize((Lizzie.config.isChinese ? 60 : 75) + extraLength, 26);
-    openfile.setSize(40 + extraLength, 26);
-    savefile.setSize(40 + extraLength, 26);
-    analyzeList.setSize((Lizzie.config.isChinese ? 60 : 80) + extraLength, 26);
-    refresh.setSize((Lizzie.config.isChinese ? 40 : 60) + extraLength, 26);
-    analyse.setSize((Lizzie.config.isChinese ? 70 : 90) + extraLength, 26);
-    tryPlay.setSize(40 + extraLength, 26);
-    setMain.setSize(70 + extraLength, 26);
-    backMain.setSize(70 + extraLength, 26);
-
-    clearButton.setSize((Lizzie.config.isChinese ? 60 : 50) + extraLength, 26);
-    countButton.setSize(60 + extraLength, 26);
-    finalScore.setSize((Lizzie.config.isChinese ? 60 : 70) + extraLength, 26);
-    heatMap.setSize((Lizzie.config.isChinese ? 50 : 57) + extraLength, 26);
-
-    move.setSize((Lizzie.config.isChinese ? 35 : 85) + extraLength, 26);
-    moveRank.setSize((Lizzie.config.isChinese ? 60 : 70) + extraLength, 26);
-    coords.setSize((Lizzie.config.isChinese ? 35 : 50) + extraLength, 26);
-
-    gotomove.setSize(35 + extraLength, 26);
+    //    int extraLength = 0;
+    //    if (System.getProperty("os.name").toLowerCase().contains("mac")
+    //        && !Lizzie.config.useJavaLooks) {
+    //      extraLength = 20;
+    //    }
+    //
+    //    if (Config.frameFontSize > 12) {
+    //      extraLength += (Config.frameFontSize - 12) * 5;
+    //    }
+    setButtonSize(autoPlay, false);
+    setButtonSize(flashAnalyze, false);
+    setButtonSize(deleteMove, true);
+    setButtonSize(badMoves, false);
+    setButtonSize(share, true);
+    setButtonSize(liveButton, true);
+    setButtonSize(kataEstimate, false);
+    setButtonSize(batchOpen, false);
+    setButtonSize(openfile, true);
+    setButtonSize(savefile, true);
+    setButtonSize(analyzeList, false);
+    setButtonSize(refresh, true);
+    setButtonSize(analyse, false);
+    setButtonSize(tryPlay, true);
+    setButtonSize(setMain, false);
+    setButtonSize(backMain, false);
+    setButtonSize(clearButton, false);
+    setButtonSize(countButton, false);
+    setButtonSize(finalScore, false);
+    setButtonSize(heatMap, false);
+    setButtonSize(move, true);
+    setButtonSize(moveRank, false);
+    setButtonSize(coords, true);
+    setButtonSize(gotomove, true);
     firstButton.setSize(30, 26);
     backward10.setSize(30, 26);
     backward1.setSize(30, 26);
@@ -1362,7 +1359,7 @@ public class BottomToolbar extends JPanel {
             // TBD
             setTxtUnfocuse();
             if (Lizzie.config.showDoubleMenu) {
-              LizzieFrame.menu.chkShowBlack.setSelected(chkShowBlack.isSelected());
+              LizzieFrame.menu.setChkShowBlack(chkShowBlack.isSelected());
             }
           }
         });
@@ -1373,7 +1370,7 @@ public class BottomToolbar extends JPanel {
             // TBD
             setTxtUnfocuse();
             if (Lizzie.config.showDoubleMenu) {
-              LizzieFrame.menu.chkShowWhite.setSelected(chkShowWhite.isSelected());
+              LizzieFrame.menu.setChkShowWhite(chkShowWhite.isSelected());
             }
           }
         });
@@ -1388,9 +1385,7 @@ public class BottomToolbar extends JPanel {
         new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent e) {
-            // TBD
-            autoPlayMain();
-
+            autoPlayMain(false);
             setTxtUnfocuse();
           }
         });
@@ -1767,7 +1762,7 @@ public class BottomToolbar extends JPanel {
           }
         });
 
-    enginePkBlack = new JComboBox();
+    enginePkBlack = new JComboBox<String>();
     enginePkPanel.add(enginePkBlack);
     enginePkBlack.setBounds(90, 2, 88, 18);
     lblengineBlack = new JLabel("黑:");
@@ -1782,7 +1777,7 @@ public class BottomToolbar extends JPanel {
     enginePkPanel.add(lblenginePkResult);
     lblenginePkResult.setBounds(186, 0, 45, 20);
 
-    enginePkWhite = new JComboBox();
+    enginePkWhite = new JComboBox<String>();
     addEngineLis();
     enginePkPanel.add(enginePkWhite);
     enginePkWhite.setBounds(255, 2, 88, 18);
@@ -2149,6 +2144,12 @@ public class BottomToolbar extends JPanel {
     if (chkenginePkBatch.isSelected()) txtenginePkBatch.setEnabled(true);
     else txtenginePkBatch.setEnabled(false);
     //  setFontSize(Lizzie.config.bottomFontSize);
+  }
+
+  private void setButtonSize(JButton button, boolean widden) {
+    button.setSize(
+        button.getFontMetrics(button.getFont()).stringWidth(button.getText()) + (widden ? 14 : 12),
+        26);
   }
 
   public void setDetailIcon() {
@@ -4067,7 +4068,7 @@ public class BottomToolbar extends JPanel {
     else autoPlay.setVisible(false);
   }
 
-  public void autoPlayMain() {
+  public void autoPlayMain(boolean autoQuit) {
     if (isAutoPlayMain) return;
     isAutoPlayMain = true;
     Runnable runnable =
@@ -4083,19 +4084,28 @@ public class BottomToolbar extends JPanel {
               isAutoPlayMain = false;
               return;
             }
+            BoardHistoryNode curNode = Lizzie.board.getHistory().getCurrentHistoryNode();
             while (chkAutoMain.isSelected()) {
               try {
-                if (!Lizzie.board.nextMove(true) && Lizzie.config.continueWithBestMove) {
-                  BoardHistoryNode cur = Lizzie.board.getHistory().getCurrentHistoryNode();
-                  if (!cur.getData().lastMove.isPresent()
-                      && cur.previous().isPresent()
-                      && !cur.previous().get().getData().lastMove.isPresent()) break;
-                  Lizzie.frame.playBestMove();
-                } else break;
-                try {
-                  time = 1000 * Integer.parseInt(txtAutoMain.getText().replace(" ", ""));
-                } catch (NumberFormatException err) {
+                if (curNode == Lizzie.board.getHistory().getCurrentHistoryNode()) {
+                  if (!Lizzie.board.nextMove(true)) {
+                    if (Lizzie.config.continueWithBestMove) {
+                      BoardHistoryNode cur = Lizzie.board.getHistory().getCurrentHistoryNode();
+                      if (!cur.getData().lastMove.isPresent()
+                          && cur.previous().isPresent()
+                          && !cur.previous().get().getData().lastMove.isPresent()) break;
+                      Lizzie.frame.playBestMove();
+                    } else {
+                    	if(autoQuit)
+                    		break;
+                    } 
+                    try {
+                      time = 1000 * Integer.parseInt(txtAutoMain.getText().replace(" ", ""));
+                    } catch (NumberFormatException err) {
+                    }
+                  }
                 }
+                curNode = Lizzie.board.getHistory().getCurrentHistoryNode();
                 Thread.sleep((int) time);
               } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -4598,6 +4608,16 @@ public class BottomToolbar extends JPanel {
     //          }
     //        };
     //    share.addActionListener(shareListener);
+  }
+
+  public void setChkShowBlack(boolean show) {
+    if (chkShowBlack != null) chkShowBlack.setSelected(show);
+    Lizzie.config.showBlackCandidates = show;
+  }
+
+  public void setChkShowWhite(boolean show) {
+    if (chkShowWhite != null) chkShowWhite.setSelected(show);
+    Lizzie.config.showWhiteCandidates = show;
   }
 
   //  public void setFontSize(int fontSize) {

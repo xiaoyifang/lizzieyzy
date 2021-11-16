@@ -97,7 +97,7 @@ public class FloatBoard extends JDialog {
     setTitle("FloatBoard");
     setAlwaysOnTop(true);
     try {
-      this.setIconImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/logo.png")));
+      this.setIconImage(ImageIO.read(getClass().getResourceAsStream("/assets/logo.png")));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -134,16 +134,15 @@ public class FloatBoard extends JDialog {
     right = new ImageIcon();
     position = new ImageIcon();
     try {
-      toStop.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/tostop.png")));
-      toPlay.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/toplay.png")));
-      plus.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/plus.png")));
-      minus.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/minus.png")));
-      down.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/downFloat.png")));
-      up.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/upFloat.png")));
-      left.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/leftFloat.png")));
-      right.setImage(
-          ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/rightFloat.png")));
-      position.setImage(ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/pos.png")));
+      toStop.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/tostop.png")));
+      toPlay.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/toplay.png")));
+      plus.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/plus.png")));
+      minus.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/minus.png")));
+      down.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/downFloat.png")));
+      up.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/upFloat.png")));
+      left.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/leftFloat.png")));
+      right.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/rightFloat.png")));
+      position.setImage(ImageIO.read(getClass().getResourceAsStream("/assets/pos.png")));
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -167,10 +166,7 @@ public class FloatBoard extends JDialog {
     btnHideShow.addActionListener(
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
-            hideSuggestion = !hideSuggestion;
-            if (hideSuggestion) btnHideShow.setIcon(plus);
-            else btnHideShow.setIcon(minus);
-            refreshByLis();
+            toggleHide();
           }
         });
     btnHideShow.setFocusable(false);
@@ -301,6 +297,12 @@ public class FloatBoard extends JDialog {
             if (e.getKeyCode() == KeyEvent.VK_G) {
               tryToRefreshVariation();
             }
+            if (e.getKeyCode() == KeyEvent.VK_F) {
+              toggleHide();
+            }
+            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+              Lizzie.frame.togglePonderMannul();
+            }
           }
         });
     addMouseListener(
@@ -403,6 +405,19 @@ public class FloatBoard extends JDialog {
             if (needRepaint) refreshByLis();
           }
         });
+  }
+
+  private void toggleHide() {
+    // TODO Auto-generated method stub
+    hideSuggestion = !hideSuggestion;
+    if (hideSuggestion) btnHideShow.setIcon(plus);
+    else {
+      btnHideShow.setIcon(minus);
+      if (Lizzie.board.getHistory().getCurrentHistoryNode()
+          != Lizzie.board.getHistory().getMainEnd())
+        Lizzie.board.moveToAnyPosition(Lizzie.board.getHistory().getMainEnd());
+    }
+    refreshByLis();
   }
 
   private void tryToRefreshVariation() {
@@ -630,8 +645,8 @@ public class FloatBoard extends JDialog {
   }
 
   public boolean isMouseOver(int x, int y) {
-    if (!LizzieFrame.toolbar.chkShowBlack.isSelected()
-        && !LizzieFrame.toolbar.chkShowBlack.isSelected()) {
+    if ((Lizzie.board.getHistory().isBlacksTurn() && !Lizzie.config.showBlackCandidates)
+        || (!Lizzie.board.getHistory().isBlacksTurn() && !Lizzie.config.showWhiteCandidates)) {
       return false;
     }
     if (Lizzie.config.showSuggestionVariations)
@@ -742,7 +757,10 @@ public class FloatBoard extends JDialog {
     this.boardType = boardType;
     if (Lizzie.leelaz.isPondering()) btnStopGo.setIcon(toStop);
     else btnStopGo.setIcon(toPlay);
-    if (!isVisible()) setVisible(true);
+    if (!isVisible()) {
+      setVisible(true);
+      if (hideSuggestion) toggleHide();
+    }
   }
 
   public void setBoardType() {

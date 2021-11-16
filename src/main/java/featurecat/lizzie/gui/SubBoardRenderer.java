@@ -48,6 +48,8 @@ public class SubBoardRenderer {
   private Branch branch;
   // private boolean oldBlackToPlay;
   private List<MoveData> bestMoves;
+  private ArrayList<Double> estimateArray;
+  private ArrayList<Double> preEstimateArray;
   public int bestmovesNum = 0;
 
   TexturePaint paint;
@@ -148,19 +150,64 @@ public class SubBoardRenderer {
     if ((!showHeat && !Lizzie.config.subBoardRaw)
         || (Lizzie.config.isFourSubMode() && !showHeat && this != Lizzie.frame.subBoardRenderer4)) {
       drawPlay(g);
-      if (!isMouseOver || statChanged || wheeled) drawBranch();
+      if (!maybeCleanBranch()) {
+        if (!isMouseOver || statChanged || wheeled) drawBranch();
+      }
       if (wheeled) wheeled = false;
     }
     if (!isMouseOver) drawStones();
     if (showHeat) {
       drawLeelazSuggestions();
     }
+    drawEstimate();
     renderImages(g);
     if (Lizzie.frame.isInPlayMode()) return;
-    if (!showHeat) {
+    if (showingBranch && !showHeat) {
       drawMoveNumbers(g);
       return;
     }
+  }
+
+  private boolean maybeCleanBranch() {
+    // TODO Auto-generated method stub
+    if ((Lizzie.board.getHistory().isBlacksTurn() && !Lizzie.config.showBlackCandidates)
+        || (!Lizzie.board.getHistory().isBlacksTurn() && !Lizzie.config.showWhiteCandidates)) {
+      clearBranch();
+      showingBranch = false;
+      return true;
+    }
+    return false;
+  }
+
+  private boolean isShowingEstimate = false;
+
+  private void drawEstimate() {
+    boolean hasDraw = false;
+    if (!Lizzie.frame.isInScoreMode
+        && !Lizzie.frame.isCounting
+        && !Lizzie.frame.isShowingHeatmap
+        && Lizzie.config.showKataGoEstimate
+        && Lizzie.config.showKataGoEstimateOnMainbord) {
+      if (estimateArray != null) {
+        if (Lizzie.config.showKataGoEstimateBySize) {
+          drawKataEstimateBySize(estimateArray, false);
+        } else {
+          drawKataEstimateByTransparent(estimateArray, false);
+        }
+        hasDraw = true;
+      } else if (preEstimateArray != null) {
+        if (Lizzie.config.showKataGoEstimateBySize) {
+          drawKataEstimateBySize(preEstimateArray, true);
+        } else {
+          drawKataEstimateByTransparent(preEstimateArray, true);
+        }
+        hasDraw = true;
+      }
+    }
+    if (!hasDraw && isShowingEstimate) {
+      removeKataEstimateImage();
+    }
+    isShowingEstimate = hasDraw;
   }
 
   private void drawPlay(Graphics2D g) {
@@ -415,7 +462,7 @@ public class SubBoardRenderer {
     }
   }
 
-  public void removecountblock() {
+  public void removeKataEstimateImage() {
     try {
       kataEstimateImage = new BufferedImage(boardWidth, boardHeight, TYPE_INT_ARGB);
     } catch (Exception ex) {
@@ -438,12 +485,13 @@ public class SubBoardRenderer {
     return Lizzie.config.showKataGoEstimateBigBelow;
   }
 
-  public void drawKataEstimateByTransparent(ArrayList<Double> tempcount) {
+  public void drawKataEstimateByTransparent(ArrayList<Double> tempcount, boolean reverse) {
     BufferedImage newEstimateImage = new BufferedImage(boardWidth, boardHeight, TYPE_INT_ARGB);
     Graphics2D g = newEstimateImage.createGraphics();
+    boolean blackToPlay = Lizzie.board.getHistory().isBlacksTurn();
+    if (reverse) blackToPlay = !blackToPlay;
     for (int i = 0; i < tempcount.size(); i++) {
-      if ((tempcount.get(i) > 0 && Lizzie.board.getHistory().isBlacksTurn())
-          || (tempcount.get(i) < 0 && !Lizzie.board.getHistory().isBlacksTurn())) {
+      if ((tempcount.get(i) > 0 && blackToPlay) || (tempcount.get(i) < 0 && !blackToPlay)) {
         int y = i / Board.boardWidth;
         int x = i % Board.boardWidth;
         int stoneX = scaledMarginWidth + squareWidth * x;
@@ -473,13 +521,9 @@ public class SubBoardRenderer {
               squareWidth);
         else
           g.fillRect(
-              stoneX - squareWidth * 3 / 10,
-              stoneY - squareWidth * 3 / 10,
-              squareWidth * 6 / 10,
-              squareWidth * 6 / 10);
+              stoneX - squareWidth / 4, stoneY - squareWidth / 4, squareWidth / 2, squareWidth / 2);
       }
-      if ((tempcount.get(i) < 0 && Lizzie.board.getHistory().isBlacksTurn())
-          || (tempcount.get(i) > 0 && !Lizzie.board.getHistory().isBlacksTurn())) {
+      if ((tempcount.get(i) < 0 && blackToPlay) || (tempcount.get(i) > 0 && !blackToPlay)) {
         int y = i / Board.boardWidth;
         int x = i % Board.boardWidth;
         int stoneX = scaledMarginWidth + squareWidth * x;
@@ -498,10 +542,7 @@ public class SubBoardRenderer {
               squareWidth);
         else
           g.fillRect(
-              stoneX - squareWidth * 3 / 10,
-              stoneY - squareWidth * 3 / 10,
-              squareWidth * 6 / 10,
-              squareWidth * 6 / 10);
+              stoneX - squareWidth / 4, stoneY - squareWidth / 4, squareWidth / 2, squareWidth / 2);
       }
     }
     kataEstimateImage = newEstimateImage;
@@ -518,12 +559,13 @@ public class SubBoardRenderer {
     }
   }
 
-  public void drawKataEstimateBySize(ArrayList<Double> tempcount) {
+  public void drawKataEstimateBySize(ArrayList<Double> tempcount, boolean reverse) {
     BufferedImage newEstimateImage = new BufferedImage(boardWidth, boardHeight, TYPE_INT_ARGB);
     Graphics2D g = newEstimateImage.createGraphics();
+    boolean blackToPlay = Lizzie.board.getHistory().isBlacksTurn();
+    if (reverse) blackToPlay = !blackToPlay;
     for (int i = 0; i < tempcount.size(); i++) {
-      if ((tempcount.get(i) > 0 && Lizzie.board.getHistory().isBlacksTurn())
-          || (tempcount.get(i) < 0 && !Lizzie.board.getHistory().isBlacksTurn())) {
+      if ((tempcount.get(i) > 0 && blackToPlay) || (tempcount.get(i) < 0 && !blackToPlay)) {
         int y = i / Board.boardWidth;
         int x = i % Board.boardWidth;
         int stoneX = scaledMarginWidth + squareWidth * x;
@@ -724,8 +766,24 @@ public class SubBoardRenderer {
       if (!Lizzie.board.getHistory().getCurrentHistoryNode().getData().bestMoves.isEmpty()) {
         bestMoveNode = Lizzie.board.getHistory().getCurrentHistoryNode();
         bestMoves = bestMoveNode.getData().bestMoves;
+        estimateArray = bestMoveNode.getData().estimateArray;
         variationBlackToPlay = bestMoveNode.getData().blackToPlay;
-      } else bestMoves = new ArrayList<MoveData>();
+      } else {
+        bestMoves = new ArrayList<MoveData>();
+        estimateArray = null;
+      }
+      if (Lizzie.config.showKataGoEstimate
+          && estimateArray == null
+          && Lizzie.board.getHistory().getCurrentHistoryNode().previous().isPresent()) {
+        preEstimateArray =
+            Lizzie.board
+                .getHistory()
+                .getCurrentHistoryNode()
+                .previous()
+                .get()
+                .getData()
+                .estimateArray;
+      } else preEstimateArray = null;
     }
 
     variationOpt = Optional.empty();
@@ -1250,7 +1308,7 @@ public class SubBoardRenderer {
       stoneImage = new BufferedImage(size, size, TYPE_INT_ARGB);
       Image img = null;
       try {
-        img = ImageIO.read(AnalysisFrame.class.getResourceAsStream("/assets/heatmap.png"));
+        img = ImageIO.read(getClass().getResourceAsStream("/assets/heatmap.png"));
       } catch (IOException e2) {
         e2.printStackTrace();
       }

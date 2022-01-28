@@ -10,9 +10,8 @@ import javax.swing.SwingUtilities;
 
 public class PanelWithToolTips extends JPanel {
   public void add(JLabel label) {
-    String texts[] = label.getText().split("\n", 2);
-    String labelText = texts[0];
-    String toolTipText = (texts.length >= 2) ? texts[1] : labelText;
+    super.add(label);
+    String labelText = label.getText();
     String displayedText =
         SwingUtilities.layoutCompoundLabel(
             label,
@@ -27,32 +26,39 @@ public class PanelWithToolTips extends JPanel {
             label.getBounds(),
             label.getBounds(),
             label.getIconTextGap());
-    label.setText(labelText);
-    if (displayedText != toolTipText) label.setToolTipText(toolTipText);
-    super.add(label);
+    if (displayedText != labelText)
+      // {ToolTipManager.sharedInstance().setDismissDelay(99999);
+      label.setToolTipText(labelText); // }
+    SwingUtilities.invokeLater(
+        new Runnable() {
+          public void run() {
+            remove(label);
+            addImpl(label, null, -1);
+          }
+        });
   }
 
   public void add(JRadioButton radioButton) {
+    super.add(radioButton);
     if (!Lizzie.config.isChinese) {
       String texts = radioButton.getText();
       if (texts.length() > 0) radioButton.setToolTipText(texts);
     }
-    super.add(radioButton);
   }
 
   public void add(JCheckBox checkBox) {
+    super.add(checkBox);
     if (!Lizzie.config.isChinese) {
       String texts = checkBox.getText();
       if (texts.length() > 0) checkBox.setToolTipText(texts);
     }
-    super.add(checkBox);
   }
 
   public void add(JButton button) {
+    super.add(button);
     if (!Lizzie.config.isChinese) {
       String texts = button.getText();
       if (texts.length() > 0 && button.getIcon() == null) button.setToolTipText(texts);
     }
-    super.add(button);
   }
 }

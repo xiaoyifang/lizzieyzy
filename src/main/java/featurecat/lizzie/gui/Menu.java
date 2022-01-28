@@ -19,6 +19,9 @@ import java.awt.Toolkit;
 import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Optional;
@@ -38,12 +41,7 @@ import org.json.JSONArray;
 
 public class Menu extends JMenuBar {
   final ButtonGroup buttonGroup = new ButtonGroup();
-  private final ResourceBundle resourceBundle =
-      Lizzie.config.useLanguage == 0
-          ? ResourceBundle.getBundle("l10n.DisplayStrings")
-          : (Lizzie.config.useLanguage == 1
-              ? ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("zh", "CN"))
-              : ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("en", "US")));
+  private final ResourceBundle resourceBundle = Lizzie.resourceBundle;
   public static ImageIcon icon;
   public static ImageIcon icon2;
   public static ImageIcon stop;
@@ -53,6 +51,7 @@ public class Menu extends JMenuBar {
   public static JFontMenu engineMenu;
   public static JFontMenu shutdownEngine;
   public static JFontMenu quickLinks;
+  private JFontMenu contributeMenu;
   JFontMenuItem shutdownAllEngine;
   JFontMenuItem shutdownCurrentEngine;
   JFontMenuItem restartCurrentEngine;
@@ -156,7 +155,9 @@ public class Menu extends JMenuBar {
     setPreferredSize(new Dimension(100, Config.menuHeight)); // 中25 大30
     // headFont = new Font(Config.sysDefaultFontName, Font.PLAIN,
     // Math.max(Lizzie.config.allFontSize, 12)); // 中16 大20
+    Font baseMenuFont = new Font(Config.sysDefaultFontName, Font.PLAIN, Config.frameFontSize);
     final JFontMenu fileMenu = new JFontMenu(resourceBundle.getString("Menu.fileMenu")); // ("文件");
+    fileMenu.setFont(baseMenuFont);
     fileMenu.setForeground(Color.BLACK);
     // fileMenu.setFont(headFont);
     this.add(fileMenu);
@@ -444,6 +445,7 @@ public class Menu extends JMenuBar {
         });
 
     final JFontMenu viewMenu = new JFontMenu(resourceBundle.getString("Menu.viewMenu")); // ("显示");
+    viewMenu.setFont(baseMenuFont);
     this.add(viewMenu);
     viewMenu.setForeground(Color.BLACK);
     // viewMenu.setFont(headFont);
@@ -596,6 +598,17 @@ public class Menu extends JMenuBar {
         });
     nextMoveHint.add(minPlayoutsForNextMove);
 
+    final JFontCheckBoxMenuItem allowClickReview =
+        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.allowClickReview"));
+    allowClickReview.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.enableClickReview = !Lizzie.config.enableClickReview;
+            Lizzie.config.uiConfig.put("enable-click-review", Lizzie.config.enableClickReview);
+          }
+        });
+    viewMenu.add(allowClickReview);
+
     final JFontMenuItem deletePersistFile =
         new JFontMenuItem(resourceBundle.getString("Menu.deletePersistFile")); // ("重置界面位置");
     deletePersistFile.addActionListener(
@@ -607,7 +620,6 @@ public class Menu extends JMenuBar {
           }
         });
     viewMenu.add(deletePersistFile);
-
     viewMenu.addSeparator();
 
     final JFontCheckBoxMenuItem noMoveNum =
@@ -682,7 +694,6 @@ public class Menu extends JMenuBar {
           }
         });
     moveMenu.add(anyMoveNum);
-    moveMenu.addSeparator();
 
     final JFontCheckBoxMenuItem moveNumberAlwaysFromOne =
         new JFontCheckBoxMenuItem(
@@ -702,10 +713,14 @@ public class Menu extends JMenuBar {
         });
     moveMenu.add(moveNumberAlwaysFromOne);
 
-    final JFontCheckBoxMenuItem moveNumberInBracnhFromOne =
+    moveMenu.addSeparator();
+
+    String moveNumberInBranchTips = resourceBundle.getString("Menu.moveNumberInBranchTips");
+
+    final JFontCheckBoxMenuItem moveNumberInBranchFromOne =
         new JFontCheckBoxMenuItem(
             resourceBundle.getString("Menu.moveNumberInBracnhFromOne")); // ("分支内从1开始显示");
-    moveNumberInBracnhFromOne.addActionListener(
+    moveNumberInBranchFromOne.addActionListener(
         new ActionListener() {
 
           @Override
@@ -717,12 +732,13 @@ public class Menu extends JMenuBar {
                 "new-move-number-in-branch", Lizzie.config.newMoveNumberInBranch);
           }
         });
-    moveMenu.add(moveNumberInBracnhFromOne);
+    moveMenu.add(moveNumberInBranchFromOne);
+    moveNumberInBranchFromOne.setToolTipText(moveNumberInBranchTips);
 
-    final JFontCheckBoxMenuItem moveNumberInBracnhFromOneContinue =
+    final JFontCheckBoxMenuItem moveNumberInBranchContinue =
         new JFontCheckBoxMenuItem(
             resourceBundle.getString("Menu.moveNumberInBracnhFromOneContinue")); // ("分支内继续总手数");
-    moveNumberInBracnhFromOneContinue.addActionListener(
+    moveNumberInBranchContinue.addActionListener(
         new ActionListener() {
 
           @Override
@@ -735,7 +751,10 @@ public class Menu extends JMenuBar {
                 "new-move-number-in-branch", Lizzie.config.newMoveNumberInBranch);
           }
         });
-    moveMenu.add(moveNumberInBracnhFromOneContinue);
+    moveMenu.add(moveNumberInBranchContinue);
+    moveNumberInBranchContinue.setToolTipText(moveNumberInBranchTips);
+
+    moveMenu.addSeparator();
 
     final JFontCheckBoxMenuItem showAllMoveNumberInBranch =
         new JFontCheckBoxMenuItem(
@@ -751,6 +770,8 @@ public class Menu extends JMenuBar {
           }
         });
     moveMenu.add(showAllMoveNumberInBranch);
+
+    moveMenu.addSeparator();
 
     final JFontCheckBoxMenuItem showMoveNumberOnVariationPane =
         new JFontCheckBoxMenuItem(
@@ -895,6 +916,20 @@ public class Menu extends JMenuBar {
           }
         });
     Suggestions.add(suggestion3);
+    Suggestions.addSeparator();
+
+    final JFontCheckBoxMenuItem showScoreAsDiff =
+        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.showScoreAsDiff")); // ("目差");
+    showScoreAsDiff.addActionListener(
+        new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.showScoreAsDiff = !Lizzie.config.showScoreAsDiff;
+            Lizzie.config.uiConfig.put("show-score-as-diff", Lizzie.config.showScoreAsDiff);
+            Lizzie.frame.refresh();
+          }
+        });
+    Suggestions.add(showScoreAsDiff);
 
     final JFontMenuItem customInfoOrdr =
         new JFontMenuItem(resourceBundle.getString("Menu.customInfoOrdr"));
@@ -1335,6 +1370,41 @@ public class Menu extends JMenuBar {
           }
         });
     winrate.add(showMouseOverWinrateGraph);
+
+    final JFontMenuItem initialMaxScoreLead =
+        new JFontMenuItem(resourceBundle.getString("Menu.initialMaxScoreLead"));
+    initialMaxScoreLead.addActionListener(
+        new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            SwingUtilities.invokeLater(
+                new Runnable() {
+                  public void run() {
+                    String result =
+                        JOptionPane.showInputDialog(
+                            Lizzie.frame,
+                            resourceBundle.getString("Menu.initialMaxScoreLead.message")
+                                + String.format(
+                                    Locale.ENGLISH, "%.1f", Lizzie.config.initialMaxScoreLead),
+                            resourceBundle.getString("Menu.initialMaxScoreLead.title"),
+                            JOptionPane.INFORMATION_MESSAGE);
+                    if (result != null)
+                      try {
+                        double value = Math.abs(Double.parseDouble(result));
+                        Lizzie.config.initialMaxScoreLead = value;
+                        Lizzie.config.uiConfig.put(
+                            "initial-max-score-lead", Lizzie.config.initialMaxScoreLead);
+                        LizzieFrame.winrateGraph.resetMaxScoreLead();
+                        Lizzie.frame.refresh();
+                      } catch (NumberFormatException ex) {
+                        Utils.showMsg(resourceBundle.getString("Menu.inputDoubleTip"));
+                        return;
+                      }
+                  }
+                });
+          }
+        });
+    winrate.add(initialMaxScoreLead);
 
     final JFontMenuItem setReplayInterval =
         new JFontMenuItem(
@@ -1865,37 +1935,38 @@ public class Menu extends JMenuBar {
     //          }
     //        });
 
-    final JFontMenu showScoreLeadOnWinrateGraph =
-        new JFontMenu(resourceBundle.getString("Menu.showScoreLeadOnWinrateGraph")); // 目差在胜率图上显示
-    kataSettings.add(showScoreLeadOnWinrateGraph);
-
-    final JFontCheckBoxMenuItem scoreLeadOnGraphWithKomi =
-        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.leadWithKomi")); // 目差
-    showScoreLeadOnWinrateGraph.add(scoreLeadOnGraphWithKomi);
-    scoreLeadOnGraphWithKomi.addActionListener(
-        new ActionListener() {
-
-          @Override
-          public void actionPerformed(ActionEvent e) {
-            Lizzie.config.scoreMeanWinrateGraphBoard = false;
-            Lizzie.config.uiConfig.put(
-                "scoremean-winrategraph-board", Lizzie.config.scoreMeanWinrateGraphBoard);
-          }
-        });
-
-    final JFontCheckBoxMenuItem scoreLeadOnGraphWithoutKomi =
-        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.leadJustScore")); // 盘面
-    showScoreLeadOnWinrateGraph.add(scoreLeadOnGraphWithoutKomi);
-    scoreLeadOnGraphWithoutKomi.addActionListener(
-        new ActionListener() {
-
-          @Override
-          public void actionPerformed(ActionEvent e) {
-            Lizzie.config.scoreMeanWinrateGraphBoard = true;
-            Lizzie.config.uiConfig.put(
-                "scoremean-winrategraph-board", Lizzie.config.scoreMeanWinrateGraphBoard);
-          }
-        });
+    //    final JFontMenu showScoreLeadOnWinrateGraph =
+    //        new JFontMenu(resourceBundle.getString("Menu.showScoreLeadOnWinrateGraph")); //
+    // 目差在胜率图上显示
+    //    kataSettings.add(showScoreLeadOnWinrateGraph);
+    //
+    //    final JFontCheckBoxMenuItem scoreLeadOnGraphWithKomi =
+    //        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.leadWithKomi")); // 目差
+    //    showScoreLeadOnWinrateGraph.add(scoreLeadOnGraphWithKomi);
+    //    scoreLeadOnGraphWithKomi.addActionListener(
+    //        new ActionListener() {
+    //
+    //          @Override
+    //          public void actionPerformed(ActionEvent e) {
+    //            Lizzie.config.scoreMeanWinrateGraphBoard = false;
+    //            Lizzie.config.uiConfig.put(
+    //                "scoremean-winrategraph-board", Lizzie.config.scoreMeanWinrateGraphBoard);
+    //          }
+    //        });
+    //
+    //    final JFontCheckBoxMenuItem scoreLeadOnGraphWithoutKomi =
+    //        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.leadJustScore")); // 盘面
+    //    showScoreLeadOnWinrateGraph.add(scoreLeadOnGraphWithoutKomi);
+    //    scoreLeadOnGraphWithoutKomi.addActionListener(
+    //        new ActionListener() {
+    //
+    //          @Override
+    //          public void actionPerformed(ActionEvent e) {
+    //            Lizzie.config.scoreMeanWinrateGraphBoard = true;
+    //            Lizzie.config.uiConfig.put(
+    //                "scoremean-winrategraph-board", Lizzie.config.scoreMeanWinrateGraphBoard);
+    //          }
+    //        });
 
     final JFontMenu kataEstimate =
         new JFontMenu(resourceBundle.getString("Menu.kataEstimate")); // ("Kata评估显示");
@@ -2041,6 +2112,24 @@ public class Menu extends JMenuBar {
         });
     kataEstimate.addSeparator();
 
+    final JFontCheckBoxMenuItem kataEstimateByTransparentSmall =
+        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.kataEstimateByTransparentSmall"));
+    kataEstimate.add(kataEstimateByTransparentSmall);
+    kataEstimateByTransparentSmall.addActionListener(
+        new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.showKataGoEstimateNormal = false;
+            Lizzie.config.showKataGoEstimateBySize = false;
+            Lizzie.config.showKataGoEstimateBigBelow = false;
+            Lizzie.config.showKataGoEstimateNotOnlive = false;
+            Lizzie.config.showKataGoEstimateSmall = true;
+            if (Lizzie.leelaz.isKatago && !Lizzie.config.showKataGoEstimate)
+              Lizzie.frame.toggleShowKataEstimate();
+            Lizzie.config.saveKataEstimateConfigs();
+          }
+        });
+
     final JFontCheckBoxMenuItem kataEstimateByTransparent =
         new JFontCheckBoxMenuItem(
             resourceBundle.getString(
@@ -2054,6 +2143,27 @@ public class Menu extends JMenuBar {
             Lizzie.config.showKataGoEstimateNormal = true;
             Lizzie.config.showKataGoEstimateBySize = false;
             Lizzie.config.showKataGoEstimateBigBelow = false;
+            Lizzie.config.showKataGoEstimateNotOnlive = false;
+            Lizzie.config.showKataGoEstimateSmall = false;
+            if (Lizzie.leelaz.isKatago && !Lizzie.config.showKataGoEstimate)
+              Lizzie.frame.toggleShowKataEstimate();
+            Lizzie.config.saveKataEstimateConfigs();
+          }
+        });
+
+    final JFontCheckBoxMenuItem kataEstimateByTransparentNotOnLive =
+        new JFontCheckBoxMenuItem(
+            resourceBundle.getString("Menu.kataEstimateByTransparentNotOnLive"));
+    kataEstimate.add(kataEstimateByTransparentNotOnLive);
+    kataEstimateByTransparentNotOnLive.addActionListener(
+        new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.showKataGoEstimateNormal = true;
+            Lizzie.config.showKataGoEstimateBySize = false;
+            Lizzie.config.showKataGoEstimateBigBelow = false;
+            Lizzie.config.showKataGoEstimateNotOnlive = true;
+            Lizzie.config.showKataGoEstimateSmall = false;
             if (Lizzie.leelaz.isKatago && !Lizzie.config.showKataGoEstimate)
               Lizzie.frame.toggleShowKataEstimate();
             Lizzie.config.saveKataEstimateConfigs();
@@ -2074,6 +2184,7 @@ public class Menu extends JMenuBar {
             Lizzie.config.showKataGoEstimateNormal = false;
             Lizzie.config.showKataGoEstimateBySize = false;
             Lizzie.config.showKataGoEstimateBigBelow = true;
+            Lizzie.config.showKataGoEstimateSmall = false;
             if (Lizzie.leelaz.isKatago && !Lizzie.config.showKataGoEstimate)
               Lizzie.frame.toggleShowKataEstimate();
             Lizzie.config.saveKataEstimateConfigs();
@@ -2092,6 +2203,7 @@ public class Menu extends JMenuBar {
             Lizzie.config.showKataGoEstimateNormal = false;
             Lizzie.config.showKataGoEstimateBySize = true;
             Lizzie.config.showKataGoEstimateBigBelow = false;
+            Lizzie.config.showKataGoEstimateSmall = false;
             if (Lizzie.leelaz.isKatago && !Lizzie.config.showKataGoEstimate)
               Lizzie.frame.toggleShowKataEstimate();
             Lizzie.config.saveKataEstimateConfigs();
@@ -2101,6 +2213,23 @@ public class Menu extends JMenuBar {
     final JFontMenu kataEstimateInPureNet =
         new JFontMenu(resourceBundle.getString("Menu.kataEstimateInPureNet"));
     kataEstimate.add(kataEstimateInPureNet);
+
+    final JFontCheckBoxMenuItem pureEstimateByTransparentSmall =
+        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.kataEstimateByTransparentSmall"));
+    kataEstimateInPureNet.add(pureEstimateByTransparentSmall);
+    pureEstimateByTransparentSmall.addActionListener(
+        new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.showPureEstimateNormal = false;
+            Lizzie.config.showPureEstimateBySize = false;
+            Lizzie.config.showPureEstimateBigBelow = false;
+            Lizzie.config.showPureEstimateNotOnlive = false;
+            Lizzie.config.showPureEstimateSmall = true;
+            if (Lizzie.leelaz.isheatmap) Lizzie.leelaz.ponder();
+            Lizzie.config.saveKataEstimateConfigs();
+          }
+        });
 
     final JFontCheckBoxMenuItem pureEstimateByTransparent =
         new JFontCheckBoxMenuItem(
@@ -2115,6 +2244,26 @@ public class Menu extends JMenuBar {
             Lizzie.config.showPureEstimateNormal = true;
             Lizzie.config.showPureEstimateBySize = false;
             Lizzie.config.showPureEstimateBigBelow = false;
+            Lizzie.config.showPureEstimateNotOnlive = false;
+            Lizzie.config.showPureEstimateSmall = false;
+            if (Lizzie.leelaz.isheatmap) Lizzie.leelaz.ponder();
+            Lizzie.config.saveKataEstimateConfigs();
+          }
+        });
+
+    final JFontCheckBoxMenuItem pureEstimateByTransparentNotOnLive =
+        new JFontCheckBoxMenuItem(
+            resourceBundle.getString("Menu.kataEstimateByTransparentNotOnLive"));
+    kataEstimateInPureNet.add(pureEstimateByTransparentNotOnLive);
+    pureEstimateByTransparentNotOnLive.addActionListener(
+        new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.showPureEstimateNormal = true;
+            Lizzie.config.showPureEstimateBySize = false;
+            Lizzie.config.showPureEstimateBigBelow = false;
+            Lizzie.config.showPureEstimateNotOnlive = true;
+            Lizzie.config.showPureEstimateSmall = false;
             if (Lizzie.leelaz.isheatmap) Lizzie.leelaz.ponder();
             Lizzie.config.saveKataEstimateConfigs();
           }
@@ -2134,6 +2283,7 @@ public class Menu extends JMenuBar {
             Lizzie.config.showPureEstimateNormal = false;
             Lizzie.config.showPureEstimateBySize = false;
             Lizzie.config.showPureEstimateBigBelow = true;
+            Lizzie.config.showPureEstimateSmall = false;
             if (Lizzie.leelaz.isheatmap) Lizzie.leelaz.ponder();
             Lizzie.config.saveKataEstimateConfigs();
           }
@@ -2151,6 +2301,7 @@ public class Menu extends JMenuBar {
             Lizzie.config.showPureEstimateNormal = false;
             Lizzie.config.showPureEstimateBySize = true;
             Lizzie.config.showPureEstimateBigBelow = false;
+            Lizzie.config.showPureEstimateSmall = false;
             if (Lizzie.leelaz.isheatmap) Lizzie.leelaz.ponder();
             Lizzie.config.saveKataEstimateConfigs();
           }
@@ -2175,8 +2326,9 @@ public class Menu extends JMenuBar {
 
     viewMenu.addMenuListener(
         new MenuListener() {
-
           public void menuSelected(MenuEvent e) {
+            if (Lizzie.config.enableClickReview) allowClickReview.setState(true);
+            else allowClickReview.setState(false);
             if (Lizzie.config.ignoreOutOfWidth) ignoreOutOfWidth.setState(true);
             else ignoreOutOfWidth.setState(false);
             if (Lizzie.config.showScrollVariation) {
@@ -2218,6 +2370,8 @@ public class Menu extends JMenuBar {
             else suggestion2.setState(false);
             if (Lizzie.config.showScoremeanInSuggestion) suggestion3.setState(true);
             else suggestion3.setState(false);
+            if (Lizzie.config.showScoreAsDiff) showScoreAsDiff.setState(true);
+            else showScoreAsDiff.setState(false);
             if (Lizzie.config.showKataGoScoreLeadWithKomi) {
               leadWithKomi.setState(false);
               leadWithoutKomi.setState(true);
@@ -2269,15 +2423,48 @@ public class Menu extends JMenuBar {
             else kataEstimateBySize.setState(false);
             if (Lizzie.config.showKataGoEstimateBigBelow) kataEstimateByBigSquare.setState(true);
             else kataEstimateByBigSquare.setState(false);
-            if (Lizzie.config.showKataGoEstimateNormal) kataEstimateByTransparent.setState(true);
-            else kataEstimateByTransparent.setState(false);
-
+            if (Lizzie.config.showKataGoEstimateSmall) {
+              kataEstimateByTransparentSmall.setSelected(true);
+              kataEstimateByTransparentNotOnLive.setSelected(false);
+              kataEstimateByTransparent.setState(false);
+            } else {
+              kataEstimateByTransparentSmall.setSelected(false);
+              if (Lizzie.config.showKataGoEstimateNormal)
+                if (Lizzie.config.showKataGoEstimateNotOnlive) {
+                  kataEstimateByTransparentNotOnLive.setSelected(true);
+                  kataEstimateByTransparent.setState(false);
+                } else {
+                  kataEstimateByTransparentNotOnLive.setSelected(false);
+                  kataEstimateByTransparent.setState(true);
+                }
+              else {
+                kataEstimateByTransparentNotOnLive.setSelected(false);
+                kataEstimateByTransparent.setState(false);
+              }
+            }
             if (Lizzie.config.showPureEstimateBySize) pureEstimateBySize.setState(true);
             else pureEstimateBySize.setState(false);
             if (Lizzie.config.showPureEstimateBigBelow) pureEstimateByBigSquare.setState(true);
             else pureEstimateByBigSquare.setState(false);
-            if (Lizzie.config.showPureEstimateNormal) pureEstimateByTransparent.setState(true);
-            else pureEstimateByTransparent.setState(false);
+            if (Lizzie.config.showPureEstimateSmall) {
+              pureEstimateByTransparentSmall.setSelected(true);
+              pureEstimateByTransparentNotOnLive.setState(false);
+              pureEstimateByTransparent.setState(false);
+            } else {
+              pureEstimateByTransparentSmall.setSelected(false);
+              if (Lizzie.config.showPureEstimateNormal)
+                if (Lizzie.config.showPureEstimateNotOnlive) {
+                  pureEstimateByTransparentNotOnLive.setState(true);
+                  pureEstimateByTransparent.setState(false);
+                } else {
+                  pureEstimateByTransparentNotOnLive.setState(false);
+                  pureEstimateByTransparent.setState(true);
+                }
+              else {
+                pureEstimateByTransparentNotOnLive.setState(false);
+                pureEstimateByTransparent.setState(false);
+              }
+            }
             if (Lizzie.config.winrateAlwaysBlack) alwaysShowBlackWinrate.setState(true);
             else alwaysShowBlackWinrate.setState(false);
             if (Lizzie.config.showSuggestionVariations) showVariationOnMouse.setState(true);
@@ -2399,32 +2586,36 @@ public class Menu extends JMenuBar {
             }
             if (Lizzie.config.showMoveNumberFromOne) moveNumberAlwaysFromOne.setState(true);
             else moveNumberAlwaysFromOne.setState(false);
-
+            if (allMoveNum.isSelected()) moveNumberAlwaysFromOne.setEnabled(false);
+            else moveNumberAlwaysFromOne.setEnabled(true);
             if (Lizzie.config.showVarMove) showMoveNumberOnVariationPane.setState(true);
             else showMoveNumberOnVariationPane.setState(false);
             if (Lizzie.config.newMoveNumberInBranch) {
-              moveNumberInBracnhFromOne.setState(true);
-              moveNumberInBracnhFromOneContinue.setState(false);
+              moveNumberInBranchFromOne.setState(true);
+              moveNumberInBranchContinue.setState(false);
             } else {
-              moveNumberInBracnhFromOne.setState(false);
-              moveNumberInBracnhFromOneContinue.setState(true);
+              moveNumberInBranchFromOne.setState(false);
+              moveNumberInBranchContinue.setState(true);
             }
 
-            if (Lizzie.config.showMoveAllInBranch) showAllMoveNumberInBranch.setState(true);
+            if (Lizzie.config.showMoveAllInBranch || allMoveNum.isSelected())
+              showAllMoveNumberInBranch.setState(true);
             else showAllMoveNumberInBranch.setState(false);
+            if (allMoveNum.isSelected()) showAllMoveNumberInBranch.setEnabled(false);
+
             if (Lizzie.config.showSuggestionOrder) showSuggestionOrder.setState(true);
             else showSuggestionOrder.setState(false);
             if (Lizzie.config.showSuggestionMaxRed) showMaxValueReverse.setState(true);
             else showMaxValueReverse.setState(false);
             if (Lizzie.config.whiteSuggestionWhite) showWhiteSuggestWhite.setState(true);
             else showWhiteSuggestWhite.setState(false);
-            if (Lizzie.config.scoreMeanWinrateGraphBoard) {
-              scoreLeadOnGraphWithKomi.setState(false);
-              scoreLeadOnGraphWithoutKomi.setState(true);
-            } else {
-              scoreLeadOnGraphWithKomi.setState(true);
-              scoreLeadOnGraphWithoutKomi.setState(false);
-            }
+            //            if (Lizzie.config.scoreMeanWinrateGraphBoard) {
+            //              scoreLeadOnGraphWithKomi.setState(false);
+            //              scoreLeadOnGraphWithoutKomi.setState(true);
+            //            } else {
+            //              scoreLeadOnGraphWithKomi.setState(true);
+            //              scoreLeadOnGraphWithoutKomi.setState(false);
+            //            }
 
             if (Lizzie.config.showHeat) {
               if (Lizzie.config.showHeatAfterCalc) {
@@ -2467,6 +2658,7 @@ public class Menu extends JMenuBar {
         });
 
     final JFontMenu gameMenu = new JFontMenu(resourceBundle.getString("Menu.game"));
+    gameMenu.setFont(baseMenuFont);
     gameMenu.setForeground(Color.BLACK);
     this.add(gameMenu);
 
@@ -2793,8 +2985,19 @@ public class Menu extends JMenuBar {
         });
     gameMenu.add(playPassMove);
 
-    final JMenuItem continueLadder =
-        new JMenuItem(resourceBundle.getString("Menu.game.continueLadder"));
+    final JFontMenuItem flattenBoard =
+        new JFontMenuItem(resourceBundle.getString("Menu.flattenBoard"));
+    flattenBoard.addActionListener(
+        new ActionListener() {
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.frame.flattenBoard();
+          }
+        });
+    gameMenu.add(flattenBoard);
+
+    final JFontMenuItem continueLadder =
+        new JFontMenuItem(resourceBundle.getString("Menu.game.continueLadder"));
     continueLadder.addActionListener(
         new ActionListener() {
           @Override
@@ -2810,6 +3013,7 @@ public class Menu extends JMenuBar {
     gameMenu.add(continueLadder);
 
     final JFontMenu analyzeMenu = new JFontMenu(resourceBundle.getString("Menu.analyze"));
+    analyzeMenu.setFont(baseMenuFont);
     analyzeMenu.setForeground(Color.BLACK);
     // analyMenu.setFont(headFont);
     this.add(analyzeMenu);
@@ -3033,6 +3237,7 @@ public class Menu extends JMenuBar {
         });
 
     final JFontMenu editMenu = new JFontMenu(resourceBundle.getString("Menu.edit"));
+    editMenu.setFont(baseMenuFont);
     editMenu.setForeground(Color.BLACK);
     // editMenu.setFont(headFont);
     this.add(editMenu);
@@ -3481,20 +3686,10 @@ public class Menu extends JMenuBar {
         });
 
     final JFontMenu shareKifu = new JFontMenu(resourceBundle.getString("Menu.share"));
+    shareKifu.setFont(baseMenuFont);
     shareKifu.setForeground(Color.BLACK);
     // shareKifu.setFont(headFont);
     this.add(shareKifu);
-
-    final JFontMenuItem shareSearch =
-        new JFontMenuItem(resourceBundle.getString("Menu.shareSearch")); // ("公开棋谱查询");
-    shareKifu.add(shareSearch);
-
-    shareSearch.addActionListener(
-        new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            Lizzie.frame.openPublicKifuSearch();
-          }
-        });
 
     final JFontMenuItem shareCurrentSgf =
         new JFontMenuItem(resourceBundle.getString("Menu.shareCurrentSgf")); // ("分享当前棋谱(Ctrl+E)");
@@ -3564,7 +3759,19 @@ public class Menu extends JMenuBar {
           }
         });
 
+    final JFontMenuItem shareSearch =
+        new JFontMenuItem(resourceBundle.getString("Menu.shareSearch")); // ("公开棋谱查询");
+    shareKifu.add(shareSearch);
+
+    shareSearch.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.frame.openPublicKifuSearch();
+          }
+        });
+
     final JFontMenu live = new JFontMenu(resourceBundle.getString("Menu.sync"));
+    live.setFont(baseMenuFont);
     live.setForeground(Color.BLACK);
     // live.setFont(headFont);
     this.add(live);
@@ -4528,8 +4735,9 @@ public class Menu extends JMenuBar {
           }
         });
 
-    final JFontMenu helpMenu = new JFontMenu(resourceBundle.getString("Menu.other"));
+    final JFontMenu helpMenu = new JFontMenu(resourceBundle.getString("Menu.help"));
     helpMenu.setForeground(Color.BLACK);
+    helpMenu.setFont(baseMenuFont);
     // helpMenu.setFont(headFont);
     this.add(helpMenu);
 
@@ -4563,6 +4771,24 @@ public class Menu extends JMenuBar {
           }
         });
 
+    final JFontMenuItem introductionJpn =
+        new JFontMenuItem(resourceBundle.getString("Menu.introductionJpn"));
+    helpMenu.add(introduction);
+
+    introductionJpn.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            try {
+              URI uri = new URI("https://www.h-eba.com/Lizzie/LizzieYzy/manual.html");
+              java.awt.Desktop.getDesktop().browse(uri);
+            } catch (Exception e1) {
+              // TODO Auto-generated catch block
+              e1.printStackTrace();
+            }
+          }
+        });
+    helpMenu.add(introductionJpn);
+
     final JFontMenuItem about =
         new JFontMenuItem(resourceBundle.getString("Menu.about")); // ("关于");
     helpMenu.add(about);
@@ -4576,12 +4802,14 @@ public class Menu extends JMenuBar {
 
     quickLinks = new JFontMenu(resourceBundle.getString("Menu.quickLinks")); // ("快速启动");
     quickLinks.setForeground(Color.BLACK);
+    quickLinks.setFont(baseMenuFont);
     // quickLinks.setFont(headFont);
     this.add(quickLinks);
     updateFastLinks();
 
     final JFontMenu settings = new JFontMenu(resourceBundle.getString("Menu.settings"));
     settings.setForeground(Color.BLACK);
+    settings.setFont(baseMenuFont);
     // settings.setFont(headFont);
     this.add(settings);
 
@@ -4693,6 +4921,28 @@ public class Menu extends JMenuBar {
           }
         });
 
+    final JFontCheckBoxMenuItem languageKR = new JFontCheckBoxMenuItem("한국어");
+    language.add(languageKR);
+    languageKR.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.useLanguage = 3;
+            Lizzie.config.uiConfig.put("use-language", Lizzie.config.useLanguage);
+            Utils.showMsg(Lizzie.resourceBundle.getString("Lizzie.hint.restart"));
+          }
+        });
+
+    final JFontCheckBoxMenuItem languageJP = new JFontCheckBoxMenuItem("日本語");
+    language.add(languageJP);
+    languageJP.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.useLanguage = 4;
+            Lizzie.config.uiConfig.put("use-language", Lizzie.config.useLanguage);
+            Utils.showMsg(Lizzie.resourceBundle.getString("Lizzie.hint.restart"));
+          }
+        });
+
     final JFontMenu frameFontSize =
         new JFontMenu(resourceBundle.getString("menu.frameFontSize")); // 界面字体大小
     settings.add(frameFontSize);
@@ -4796,20 +5046,38 @@ public class Menu extends JMenuBar {
           }
         });
 
+    final JFontCheckBoxMenuItem showContribute =
+        new JFontCheckBoxMenuItem(resourceBundle.getString("Menu.showContribute"));
+    settings.add(showContribute);
+    showContribute.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.config.showContribute = !Lizzie.config.showContribute;
+            Lizzie.config.uiConfig.put("show-Contribute", Lizzie.config.showContribute);
+            contributeMenu.setVisible(Lizzie.config.showContribute);
+          }
+        });
+
     settings.addMenuListener(
         new MenuListener() {
 
           public void menuSelected(MenuEvent e) {
+            if (Lizzie.config.showContribute) showContribute.setState(true);
+            else showContribute.setState(false);
             if (Lizzie.config.playSound) playSound.setState(true);
             else playSound.setState(false);
             if (Lizzie.config.notPlaySoundInSync) notPlaySoundInSync.setState(true);
             else notPlaySoundInSync.setState(false);
+            languageDefault.setState(false);
+            languageZH.setState(false);
+            languageEN.setState(false);
+            languageKR.setState(false);
+            languageJP.setState(false);
             if (Lizzie.config.useLanguage == 0) languageDefault.setState(true);
-            else languageDefault.setState(false);
             if (Lizzie.config.useLanguage == 1) languageZH.setState(true);
-            else languageZH.setState(false);
             if (Lizzie.config.useLanguage == 2) languageEN.setState(true);
-            else languageEN.setState(false);
+            if (Lizzie.config.useLanguage == 3) languageKR.setState(true);
+            if (Lizzie.config.useLanguage == 4) languageJP.setState(true);
             if (Lizzie.config.useJavaLooks) {
               frameLooksJava.setState(true);
               frameLooksSystem.setSelected(false);
@@ -4849,6 +5117,51 @@ public class Menu extends JMenuBar {
           public void menuCanceled(MenuEvent e) {
             // TODO Auto-generated method stub
 
+          }
+        });
+
+    contributeMenu = new JFontMenu(resourceBundle.getString("Menu.contributeMenu")); // ("跑谱贡献");
+    contributeMenu.setForeground(Color.BLACK);
+    contributeMenu.setFont(baseMenuFont);
+    this.add(contributeMenu);
+    contributeMenu.setVisible(Lizzie.config.showContribute);
+
+    final JFontMenuItem kataGoDistributedTraining =
+        new JFontMenuItem(resourceBundle.getString("Menu.kataGoDistributedTraining"));
+    contributeMenu.add(kataGoDistributedTraining);
+
+    kataGoDistributedTraining.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.frame.startContributeEngine();
+          }
+        });
+
+    final JFontMenuItem kataGoTrainingSettings =
+        new JFontMenuItem(resourceBundle.getString("Menu.kataGoTrainingSettings"));
+    contributeMenu.add(kataGoTrainingSettings);
+
+    kataGoTrainingSettings.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            Lizzie.frame.openContributeSettings();
+          }
+        });
+
+    final JFontMenuItem kataGoOfficialWebsite =
+        new JFontMenuItem(resourceBundle.getString("Menu.kataGoOfficialWebsite"));
+    contributeMenu.add(kataGoOfficialWebsite);
+
+    kataGoOfficialWebsite.addActionListener(
+        new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            try {
+              URI uri = new URI("https://katagotraining.org/");
+              java.awt.Desktop.getDesktop().browse(uri);
+            } catch (Exception e1) {
+              // TODO Auto-generated catch block
+              e1.printStackTrace();
+            }
           }
         });
 
@@ -5154,6 +5467,116 @@ public class Menu extends JMenuBar {
               Lizzie.board.getHistory().getGameInfo().setKomi(newKomi);
             } else Lizzie.leelaz.komi(newKomi);
             Lizzie.board.getHistory().getGameInfo().changeKomi();
+            Lizzie.frame.refresh();
+          }
+        });
+
+    btnKomiUp.addMouseListener(
+        new MouseAdapter() {
+          Instant start;
+          boolean pressed = false;
+
+          @Override
+          public void mousePressed(MouseEvent e) {
+            start = Instant.now();
+            pressed = true;
+            Runnable runnable =
+                new Runnable() {
+                  public void run() {
+                    boolean started = false;
+                    while (pressed) {
+                      try {
+                        Thread.sleep(10);
+                      } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                      }
+                      if ((started && Duration.between(start, Instant.now()).toMillis() > 150)
+                          || (!started
+                              && Duration.between(start, Instant.now()).toMillis() > 400)) {
+                        started = true;
+                        if (txtKomi.getText().trim().equals("")) return;
+                        double newKomi = Double.parseDouble(txtKomi.getText().trim()) + 0.5;
+                        if (EngineManager.isEngineGame) {
+                          Lizzie.engineManager
+                              .engineList
+                              .get(EngineManager.engineGameInfo.firstEngineIndex)
+                              .sendCommand("komi " + (newKomi == 0.0 ? "0" : newKomi));
+                          Lizzie.engineManager
+                              .engineList
+                              .get(EngineManager.engineGameInfo.secondEngineIndex)
+                              .sendCommand("komi " + (newKomi == 0.0 ? "0" : newKomi));
+                          if (Lizzie.leelaz.isPondering()) Lizzie.leelaz.ponder();
+                          Lizzie.board.getHistory().getGameInfo().setKomi(newKomi);
+                        } else Lizzie.leelaz.komi(newKomi);
+                        Lizzie.board.getHistory().getGameInfo().changeKomi();
+                        start = Instant.now();
+                      }
+                    }
+                  }
+                };
+            Thread thread = new Thread(runnable);
+            thread.start();
+          }
+
+          @Override
+          public void mouseReleased(MouseEvent e) {
+            pressed = false;
+            Lizzie.frame.refresh();
+          }
+        });
+
+    btnKomiDown.addMouseListener(
+        new MouseAdapter() {
+          Instant start;
+          boolean pressed = false;
+
+          @Override
+          public void mousePressed(MouseEvent e) {
+            start = Instant.now();
+            pressed = true;
+            Runnable runnable =
+                new Runnable() {
+                  public void run() {
+                    boolean started = false;
+                    while (pressed) {
+                      try {
+                        Thread.sleep(10);
+                      } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                      }
+                      if ((started && Duration.between(start, Instant.now()).toMillis() > 150)
+                          || (!started
+                              && Duration.between(start, Instant.now()).toMillis() > 400)) {
+                        started = true;
+                        if (txtKomi.getText().trim().equals("")) return;
+                        double newKomi = Double.parseDouble(txtKomi.getText().trim()) - 0.5;
+                        if (EngineManager.isEngineGame) {
+                          Lizzie.engineManager
+                              .engineList
+                              .get(EngineManager.engineGameInfo.firstEngineIndex)
+                              .sendCommand("komi " + (newKomi == 0.0 ? "0" : newKomi));
+                          Lizzie.engineManager
+                              .engineList
+                              .get(EngineManager.engineGameInfo.secondEngineIndex)
+                              .sendCommand("komi " + (newKomi == 0.0 ? "0" : newKomi));
+                          if (Lizzie.leelaz.isPondering()) Lizzie.leelaz.ponder();
+                          Lizzie.board.getHistory().getGameInfo().setKomi(newKomi);
+                        } else Lizzie.leelaz.komi(newKomi);
+                        Lizzie.board.getHistory().getGameInfo().changeKomi();
+                        start = Instant.now();
+                      }
+                    }
+                  }
+                };
+            Thread thread = new Thread(runnable);
+            thread.start();
+          }
+
+          @Override
+          public void mouseReleased(MouseEvent e) {
+            pressed = false;
             Lizzie.frame.refresh();
           }
         });
@@ -8305,8 +8728,19 @@ public class Menu extends JMenuBar {
     }
     if (Lizzie.frame.isAnaPlayingAgainstLeelaz || Lizzie.frame.isPlayingAgainstLeelaz) {
       if (Lizzie.frame.isAnaPlayingAgainstLeelaz) {
-        Lizzie.leelaz.togglePonder();
-        Lizzie.leelaz.isGamePaused = !Lizzie.leelaz.isPondering();
+        boolean needTogglePonder = true;
+        if (Lizzie.leelaz.isGamePaused) {
+          if (!Lizzie.config.playponder
+              && Lizzie.frame.playerIsBlack == Lizzie.board.getHistory().isBlacksTurn()) {
+            Lizzie.leelaz.Pondering();
+            Lizzie.leelaz.isGamePaused = false;
+            needTogglePonder = false;
+          }
+        }
+        if (needTogglePonder) {
+          Lizzie.leelaz.togglePonder();
+          Lizzie.leelaz.isGamePaused = !Lizzie.leelaz.isPondering();
+        }
       }
       if (Lizzie.frame.isPlayingAgainstLeelaz) {
         Lizzie.leelaz.isGamePaused = !Lizzie.leelaz.isGamePaused;
@@ -9073,7 +9507,9 @@ public class Menu extends JMenuBar {
             if (!Lizzie.frame.isAnaPlayingAgainstLeelaz
                 && !Lizzie.frame.isPlayingAgainstLeelaz
                 && !EngineManager.isEngineGame) doubleMenuPauseGame.setEnabled(false);
-            else doubleMenuPauseGame.setEnabled(true);
+            else {
+              doubleMenuPauseGame.setEnabled(true);
+            }
             if ((Lizzie.frame.isAnaPlayingAgainstLeelaz
                     || Lizzie.frame.isPlayingAgainstLeelaz
                     || EngineManager.isEngineGame)
@@ -9081,16 +9517,21 @@ public class Menu extends JMenuBar {
               if (Lizzie.config.showDoubleMenu) {
                 doubleMenuStopGame.setVisible(true);
                 doubleMenuNewGame.setVisible(false);
-              } else doubleMenuNewGame.setText(resourceBundle.getString("Menu.endGameBtn"));
+              }
+              doubleMenuNewGame.setText(resourceBundle.getString("Menu.endGameBtn"));
             } else {
               if (Lizzie.config.showDoubleMenu) {
                 doubleMenuStopGame.setVisible(false);
                 doubleMenuNewGame.setVisible(true);
-              } else doubleMenuNewGame.setText(resourceBundle.getString("Menu.newGameBtn"));
+              }
+              doubleMenuNewGame.setText(resourceBundle.getString("Menu.newGameBtn"));
             }
-            if (Lizzie.frame.isAnaPlayingAgainstLeelaz || Lizzie.frame.isPlayingAgainstLeelaz)
+            if (Lizzie.frame.isAnaPlayingAgainstLeelaz || Lizzie.frame.isPlayingAgainstLeelaz) {
               doubleMenuResign.setVisible(true);
-            else doubleMenuResign.setVisible(false);
+              if (Lizzie.leelaz.isGamePaused)
+                doubleMenuPauseGame.setText(resourceBundle.getString("Menu.continueGameBtn"));
+              else doubleMenuPauseGame.setText(resourceBundle.getString("Menu.pauseGameBtn"));
+            } else doubleMenuResign.setVisible(false);
             if (EngineManager.isEngineGame) {
               if (LizzieFrame.toolbar.isPkStop)
                 doubleMenuPauseGame.setText(resourceBundle.getString("Menu.continueGameBtn"));
@@ -9320,14 +9761,12 @@ public class Menu extends JMenuBar {
     SwingUtilities.invokeLater(
         new Runnable() {
           public void run() {
-            JFontMenuItem[] engine =
-                index == 1 ? featurecat.lizzie.gui.Menu.engine : featurecat.lizzie.gui.Menu.engine2;
+            JFontMenuItem[] engine = index == 1 ? Menu.engine : Menu.engine2;
             for (int i = 0; i < 21; i++) {
               if (i < Lizzie.engineManager.engineList.size()
                   && !Lizzie.engineManager.engineList.get(i).isStarted()) engine[i].setIcon(null);
-              else if (engine[i].getIcon() != null
-                  && engine[i].getIcon() != featurecat.lizzie.gui.Menu.stop) {
-                engine[i].setIcon(featurecat.lizzie.gui.Menu.ready);
+              else if (engine[i].getIcon() != null && engine[i].getIcon() != Menu.stop) {
+                engine[i].setIcon(Menu.ready);
               }
             }
             if (EngineManager.currentEngineNo <= 20) {
@@ -9337,7 +9776,7 @@ public class Menu extends JMenuBar {
                   == null) {
               } else {
                 engine[index == 1 ? EngineManager.currentEngineNo : EngineManager.currentEngineNo2]
-                    .setIcon(featurecat.lizzie.gui.Menu.icon);
+                    .setIcon(Menu.icon);
               }
             }
           }

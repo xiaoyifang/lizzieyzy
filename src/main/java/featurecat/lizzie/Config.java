@@ -35,7 +35,7 @@ public class Config {
   public boolean showCaptured = true;
   // public boolean handicapInsteadOfWinrate = false;
   //  public boolean showDynamicKomi = false;
-  public double replayBranchIntervalSeconds = 0.9;
+  public double replayBranchIntervalSeconds = 0.5;
   public boolean showCoordinates = true;
   public boolean colorByWinrateInsteadOfVisits = false;
   // public boolean showlcbwinrate = false;
@@ -45,7 +45,7 @@ public class Config {
   public boolean fastChange = true;
   public boolean showKataGoScoreLeadWithKomi = false;
   //  public boolean kataGoScoreMeanAlwaysBlack = false;
-  public boolean scoreMeanWinrateGraphBoard = false;
+  // public boolean scoreMeanWinrateGraphBoard = false;
   public boolean showKataGoEstimate = false;
   // public boolean allowDrageDoubleClick = true;
   public boolean showKataGoEstimateOnSubbord = false;
@@ -242,7 +242,7 @@ public class Config {
 
   public boolean autoCheckVersion = true;
   public String autoCheckDate = "";
-  public String ignoreVersion = "";
+  public int ignoreVersion = 0;
 
   public String kataRules = "";
   public boolean autoLoadKataRules = false;
@@ -399,7 +399,7 @@ public class Config {
   public int newEngineGameHandicap = 0;
 
   public boolean UsePlayMode = true;
-  public int useLanguage = 0; // 0默认 1中文2英文..
+  public int useLanguage = 0; // 0默认 1中文2英文3韩语..
   public boolean needReopenFirstUseSettings = false;
 
   public boolean autoCheckEngineAlive = true;
@@ -464,6 +464,10 @@ public class Config {
   public boolean useDefaultInfoRowOrder = true;
 
   public boolean useIinCoordsName = false;
+  public boolean useFoxStyleCoords = false;
+  public boolean useNumCoordsFromTop = false;
+  public boolean useNumCoordsFromBottom = false;
+
   public boolean autoReplayBranch = false;
   public boolean autoReplayDisplayEntireVariationsFirst = false;
   public double displayEntireVariationsFirstSeconds = 3.0;
@@ -494,11 +498,15 @@ public class Config {
 
   public boolean showKataGoEstimateBySize = false;
   public boolean showKataGoEstimateBigBelow = false;
-  public boolean showKataGoEstimateNormal = true;
+  public boolean showKataGoEstimateNormal = false;
+  public boolean showKataGoEstimateNotOnlive = false;
+  public boolean showKataGoEstimateSmall = true;
 
   public boolean showPureEstimateBySize = false;
   public boolean showPureEstimateBigBelow = true;
   public boolean showPureEstimateNormal = false;
+  public boolean showPureEstimateNotOnlive = false;
+  public boolean showPureEstimateSmall = false;
 
   public boolean useJavaLooks = false;
   public boolean shouldWidenCheckBox = false;
@@ -573,7 +581,7 @@ public class Config {
 
   public int otherSizeWidth = 21;
   public int otherSizeHeight = 21;
-  public boolean useFoxStyleCoords = false;
+
   public boolean stopAtEmptyBoard = false;
 
   public boolean useScoreDiffInVariationTree = true;
@@ -599,12 +607,41 @@ public class Config {
   public String lastFoxName = "";
 
   public boolean continueWithBestMove = false;
+  public boolean directlyWithBestMove = true;
 
   public boolean delayShowCandidates = false;
   public double delayCandidatesSeconds = 10;
 
   public boolean showBlackCandidates = true;
   public boolean showWhiteCandidates = true;
+
+  public boolean useTerritoryInScore = false;
+
+  public boolean showScoreAsDiff = false;
+
+  public String contributeEnginePath = "";
+  public String contributeConfigPath = "";
+  public String contributeUserName = "";
+  public String contributePassword = "";
+  public String contributeBatchGames = "6";
+  public boolean contributeShowEstimate = false;
+  public boolean contributeUseCommand = false;
+  public String contributeCommand = "";
+  public boolean contributeAutoSave = false;
+
+  public boolean contributeWatchSkipNone19 = false;
+  public boolean contributeWatchAlwaysLastMove = false;
+  public boolean contributeWatchAutoPlay = true;
+  public double contributeWatchAutoPlayInterval = 2.0;
+  public boolean contributeWatchAutoPlayNextGame = true;
+  public boolean contributeHideResult = false;
+  public boolean contributeHideConsole = false;
+  public boolean contributeHideRules = false;
+  public boolean showContribute = true;
+  public boolean contributeUseSlowShutdown = true;
+
+  public double initialMaxScoreLead = 15;
+  public boolean enableClickReview = true;
 
   private JSONObject loadAndMergeSaveBoardConfig(
       JSONObject defaultCfg, String fileName, boolean needValidation) throws IOException {
@@ -623,24 +660,35 @@ public class Config {
         System.exit(1);
       }
     }
+    try {
+      FileInputStream fp = new FileInputStream(file);
+      InputStreamReader reader = new InputStreamReader(fp, "utf-8");
 
-    FileInputStream fp = new FileInputStream(file);
-    InputStreamReader reader = new InputStreamReader(fp, "utf-8");
+      JSONObject mergedcfg = new JSONObject(new JSONTokener(reader));
+      boolean modified = mergeDefaults(mergedcfg, defaultCfg);
+      fp.close();
 
-    JSONObject mergedcfg = new JSONObject(new JSONTokener(reader));
-    boolean modified = mergeDefaults(mergedcfg, defaultCfg);
+      // Validate and correct settings
+      //    if (needValidation && validateAndCorrectSettings(mergedcfg)) {
+      //      modified = true;
+      //    }
+      if (needValidation) checkEmptyBlunderThresholds(mergedcfg);
+      if (modified) {
+        writeConfig(mergedcfg, file);
+      }
+      return mergedcfg;
+    } catch (JSONException e) {
+      e.printStackTrace();
+      System.err.printf("Creating config file %s\n", fileName);
 
-    fp.close();
-
-    // Validate and correct settings
-    //    if (needValidation && validateAndCorrectSettings(mergedcfg)) {
-    //      modified = true;
-    //    }
-    if (needValidation) checkEmptyBlunderThresholds(mergedcfg);
-    if (modified) {
-      writeConfig(mergedcfg, file);
+      try {
+        writeConfig(defaultCfg, file);
+      } catch (JSONException es) {
+        es.printStackTrace();
+        System.exit(1);
+      }
+      return defaultCfg;
     }
-    return mergedcfg;
   }
 
   private JSONObject loadAndMergeConfig(
@@ -891,7 +939,7 @@ public class Config {
     showMoveNumberFromOne = uiConfig.optBoolean("movenumber-from-one", false);
     // kataGoNotShowWinrate = uiConfig.optBoolean("katago-notshow-winrate", false);
     showKataGoEstimate = uiConfig.optBoolean("show-katago-estimate", false);
-    scoreMeanWinrateGraphBoard = uiConfig.optBoolean("scoremean-winrategraph-board", false);
+    // scoreMeanWinrateGraphBoard = uiConfig.optBoolean("scoremean-winrategraph-board", false);
     showSuggestionOrder = uiConfig.optBoolean("show-suggestion-order", true);
     showSuggestionMaxRed = uiConfig.optBoolean("show-suggestion-maxred", true);
 
@@ -907,21 +955,31 @@ public class Config {
                 + "estimate.cfg");
     estimateThreshold = uiConfig.optDouble("estimate-threshold", 0.4);
 
-    showKataGoEstimateNormal = uiConfig.optBoolean("show-katago-estimate-normal", true);
+    showKataGoEstimateNormal = uiConfig.optBoolean("show-katago-estimate-normal", false);
     showKataGoEstimateBySize = uiConfig.optBoolean("show-katago-estimate-by-size", false);
     showKataGoEstimateBigBelow = uiConfig.optBoolean("show-katago-estimate-big-below", false);
+    showKataGoEstimateNotOnlive = uiConfig.optBoolean("show-katago-estimate-not-on-live", false);
+    showKataGoEstimateSmall = uiConfig.optBoolean("show-katago-estimate-small", true);
 
-    showPureEstimateNormal = uiConfig.optBoolean("show-Pure-estimate-normal", false);
-    showPureEstimateBySize = uiConfig.optBoolean("show-Pure-estimate-by-size", false);
-    showPureEstimateBigBelow = uiConfig.optBoolean("show-Pure-estimate-big-below", true);
+    showPureEstimateNormal = uiConfig.optBoolean("show-pure-estimate-normal", false);
+    showPureEstimateBySize = uiConfig.optBoolean("show-pure-estimate-by-size", false);
+    showPureEstimateBigBelow = uiConfig.optBoolean("show-pure-estimate-big-below", true);
+    showPureEstimateNotOnlive = uiConfig.optBoolean("show-pure-estimate-not-on-live", false);
+    showPureEstimateSmall = uiConfig.optBoolean("show-pure-estimate-small", false);
 
     useJavaLooks = uiConfig.optBoolean("use-java-looks", !OS.isWindows());
     showNextMoveBlunder = uiConfig.optBoolean("show-next-move-blunder", true);
     batchAnalysisPlayouts = uiConfig.optInt("batch-analysis-playouts", 100);
     minPlayoutsForNextMove = uiConfig.optInt("min-playouts-for-next-move", 30);
-    shouldWidenCheckBox =
-        useJavaLooks
-            || !(Boolean) Toolkit.getDefaultToolkit().getDesktopProperty("win.xpstyle.themeActive");
+    try {
+      shouldWidenCheckBox =
+          useJavaLooks
+              || !(Boolean)
+                  Toolkit.getDefaultToolkit().getDesktopProperty("win.xpstyle.themeActive");
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
     showSuggestionVariations = uiConfig.optBoolean("show-suggestion-variations", true);
     subBoardRaw = uiConfig.optBoolean("subboard-raw", false);
     backgroundFilter = theme.backgroundFilter();
@@ -1077,7 +1135,7 @@ public class Config {
     suggestionsalwaysontop = uiConfig.optBoolean("suggestions-always-ontop", false);
     appendWinrateToComment = uiConfig.optBoolean("append-winrate-to-comment", true);
     showCoordinates = uiConfig.optBoolean("show-coordinates", true);
-    replayBranchIntervalSeconds = uiConfig.optDouble("replay-branch-interval-seconds", 0.9);
+    replayBranchIntervalSeconds = uiConfig.optDouble("replay-branch-interval-seconds", 0.5);
     colorByWinrateInsteadOfVisits = uiConfig.optBoolean("color-by-winrate-instead-of-visits");
     boardPositionProportion = uiConfig.optInt("board-postion-proportion", 4);
     showPvVisits = uiConfig.optBoolean("show-pv-visits", false);
@@ -1208,7 +1266,7 @@ public class Config {
     sharePublic = uiConfig.optBoolean("share-public", true);
     autoCheckVersion = uiConfig.optBoolean("auto-check-version", true);
     autoCheckDate = uiConfig.optString("auto-check-date", "");
-    ignoreVersion = uiConfig.optString("ignore-version", "");
+    ignoreVersion = uiConfig.optInt("ignore-version", 0);
     // firstUse = uiConfig.optBoolean("first-time-use", true);
     loadSgfLast = uiConfig.optBoolean("load-sgf-last", false);
     useShortcutKataEstimate = uiConfig.optBoolean("shortcut-kata-estimate", false);
@@ -1284,11 +1342,14 @@ public class Config {
     foxAfterGet = uiConfig.optInt("fox-after-get", 0);
     lastFoxName = uiConfig.optString("last-fox-name", "");
     continueWithBestMove = uiConfig.optBoolean("continue-with-best-move", false);
+    directlyWithBestMove = uiConfig.optBoolean("directly-with-best-move", false);
     delayShowCandidates = uiConfig.optBoolean("delay-show-candidates", false);
     delayCandidatesSeconds = uiConfig.optDouble("delay-candidates-seconds", 10.0);
     otherSizeWidth = uiConfig.optInt("other-size-width", 21);
     otherSizeHeight = uiConfig.optInt("other-size-height", 21);
     useFoxStyleCoords = uiConfig.optBoolean("use-fox-style-coords", false);
+    useNumCoordsFromTop = uiConfig.optBoolean("use-num-coords-from-top", false);
+    useNumCoordsFromBottom = uiConfig.optBoolean("use-num-coords-from-bottom", false);
     showScrollVariation = uiConfig.optBoolean("show-scroll-variation", true);
     ignoreOutOfWidth = uiConfig.optBoolean("ignore-out-of-width", false);
     enginePkPonder = uiConfig.optBoolean("engine-pk-ponder", false);
@@ -1296,10 +1357,34 @@ public class Config {
     noCapture = uiConfig.optBoolean("no-capture", false);
     showrect = uiConfig.optInt("show-move-rect", 1);
     winrateAlwaysBlack = uiConfig.optBoolean("win-rate-always-black", false);
+    showScoreAsDiff = uiConfig.optBoolean("show-score-as-diff", false);
 
     // chkPkStartNum = uiConfig.optBoolean("chkpk-start-num", false);
     // pkStartNum = uiConfig.optInt("pk-start-num", 1);
+    contributeEnginePath = uiConfig.optString("contribute-engine-path", "");
+    contributeConfigPath = uiConfig.optString("contribute-config-path", "");
+    contributeUserName = uiConfig.optString("contribute-user-name", "");
+    contributePassword = uiConfig.optString("contribute-password", "");
+    contributeBatchGames = uiConfig.optString("contribute-batch-games", "6");
+    contributeShowEstimate = uiConfig.optBoolean("contribute-show-estimate", false);
+    contributeUseCommand = uiConfig.optBoolean("contribute-use-command", false);
+    contributeCommand = uiConfig.optString("contribute-command", "");
+    contributeAutoSave = uiConfig.optBoolean("contribute-auto-save", false);
+    contributeWatchSkipNone19 = uiConfig.optBoolean("contribute-watch-skip-none-19", false);
+    contributeWatchAlwaysLastMove = uiConfig.optBoolean("contribute-watch-always-last-move", false);
+    contributeWatchAutoPlay = uiConfig.optBoolean("contribute-watch-auto-play", true);
+    contributeWatchAutoPlayNextGame =
+        uiConfig.optBoolean("contribute-watch-auto-play-next-game", true);
+    contributeWatchAutoPlayInterval =
+        uiConfig.optDouble("contribute-watch-auto-play-interval", 2.0);
+    contributeHideResult = uiConfig.optBoolean("contribute-hide-result", false);
+    contributeHideConsole = uiConfig.optBoolean("contribute-hide-console", false);
+    contributeHideRules = uiConfig.optBoolean("contribute-hide-rules", false);
+    showContribute = uiConfig.optBoolean("show-Contribute", true);
+    contributeUseSlowShutdown = uiConfig.optBoolean("contribute-use-slow-shutdown", true);
 
+    enableClickReview = uiConfig.optBoolean("enable-click-review", true);
+    initialMaxScoreLead = uiConfig.optDouble("initial-max-score-lead", 15.0);
     chkDymPDA = uiConfig.optBoolean("chk-dym-pda", false);
     chkStaticPDA = uiConfig.optBoolean("chk-static-pda", false);
     chkAutoPDA = uiConfig.optBoolean("chk-auto-pda", false);
@@ -1310,6 +1395,7 @@ public class Config {
     allowDoubleClick = uiConfig.optBoolean("allow-double-click", true);
     allowDrag = uiConfig.optBoolean("allow-drag", false);
     noRefreshOnSub = uiConfig.optBoolean("no-refresh-on-sub", true);
+    useTerritoryInScore = uiConfig.optBoolean("use-territory-in-score", false);
 
     // chkEngineSgfStart = uiConfig.optBoolean("engine-sgf-start", true);
     engineSgfStartRandom = uiConfig.optBoolean("engine-sgf-random", true);
@@ -2443,10 +2529,14 @@ public class Config {
     uiConfig.put("show-katago-estimate-normal", showKataGoEstimateNormal);
     uiConfig.put("show-katago-estimate-by-size", showKataGoEstimateBySize);
     uiConfig.put("show-katago-estimate-big-below", showKataGoEstimateBigBelow);
+    uiConfig.put("show-katago-estimate-not-on-live", showKataGoEstimateNotOnlive);
+    uiConfig.put("show-katago-estimate-small", showKataGoEstimateSmall);
 
-    uiConfig.put("show-Pure-estimate-normal", showPureEstimateNormal);
-    uiConfig.put("show-Pure-estimate-by-size", showPureEstimateBySize);
-    uiConfig.put("show-Pure-estimate-big-below", showPureEstimateBigBelow);
+    uiConfig.put("show-pure-estimate-normal", showPureEstimateNormal);
+    uiConfig.put("show-pure-estimate-by-size", showPureEstimateBySize);
+    uiConfig.put("show-pure-estimate-big-below", showPureEstimateBigBelow);
+    uiConfig.put("show-pure-estimate-not-on-live", showPureEstimateNotOnlive);
+    uiConfig.put("show-pure-estimate-small", showPureEstimateSmall);
   }
 
   public void setSuggestionInfoOrdr(int winrateOrder, int playoutsOrder, int scoreLeadOrder) {

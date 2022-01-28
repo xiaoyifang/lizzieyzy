@@ -24,7 +24,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
@@ -42,12 +41,7 @@ import javax.swing.text.StyleConstants;
 import org.json.JSONArray;
 
 public class GtpConsolePane extends JDialog {
-  private final ResourceBundle resourceBundle =
-      Lizzie.config.useLanguage == 0
-          ? ResourceBundle.getBundle("l10n.DisplayStrings")
-          : (Lizzie.config.useLanguage == 1
-              ? ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("zh", "CN"))
-              : ResourceBundle.getBundle("l10n.DisplayStrings", new Locale("en", "US")));
+  private final ResourceBundle resourceBundle = Lizzie.resourceBundle;
 
   private int scrollLength = 0;
   private JScrollPane scrollPane;
@@ -57,7 +51,7 @@ public class GtpConsolePane extends JDialog {
   private JFontLabel lblCommand = new JFontLabel();
   private JPanel pnlCommand = new JPanel();
   private ScheduledExecutorService executor;
-  int checkCount = 0;
+  private int checkCount = 0;
   private Font gtpFont;
   private ArrayDeque<DocType> docQueue;
   private FileOutputStream bos;
@@ -199,17 +193,19 @@ public class GtpConsolePane extends JDialog {
     fastCommands.setVisible(true);
   }
 
-  public void addDocs(DocType doc) {
-    SimpleAttributeSet attrSet = new SimpleAttributeSet();
-    StyleConstants.setForeground(attrSet, doc.contentColor);
-    if (doc.isCommand) {
-      StyleConstants.setFontFamily(attrSet, Lizzie.config.uiFontName);
+  private void addDocs(DocType doc) {
+    synchronized (console) {
+      SimpleAttributeSet attrSet = new SimpleAttributeSet();
+      StyleConstants.setForeground(attrSet, doc.contentColor);
+      if (doc.isCommand) {
+        StyleConstants.setFontFamily(attrSet, Lizzie.config.uiFontName);
+      }
+      StyleConstants.setFontSize(attrSet, doc.fontSize);
+      insert(doc.content, attrSet);
     }
-    StyleConstants.setFontSize(attrSet, doc.fontSize);
-    insert(doc.content, attrSet);
   }
 
-  public void setDocs(String str, Color col, boolean isCommand, int fontSize) {
+  private void setDocs(String str, Color col, boolean isCommand, int fontSize) {
     DocType doc = new DocType();
     doc.content = str;
     doc.contentColor = col;
@@ -218,7 +214,7 @@ public class GtpConsolePane extends JDialog {
     docQueue.addLast(doc);
   }
 
-  public void insert(String str, AttributeSet attrSet) {
+  private void insert(String str, AttributeSet attrSet) {
     Document doc = console.getDocument();
     try {
       doc.insertString(doc.getLength(), str, attrSet);
@@ -249,7 +245,6 @@ public class GtpConsolePane extends JDialog {
               }
             }
           } catch (NoSuchElementException e) {
-            e.printStackTrace();
             docQueue = new ArrayDeque<>();
             docQueue.clear();
             break;

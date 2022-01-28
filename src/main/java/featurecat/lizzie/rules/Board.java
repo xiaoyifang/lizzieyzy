@@ -15,7 +15,6 @@ import featurecat.lizzie.util.Utils;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -68,6 +67,11 @@ public class Board {
   private boolean hasBigBranch = false;
   public boolean isExtremlySmallBoard = false;
   private boolean neverPassedInGame = true;
+
+  public boolean isMouseOnStone = false;
+  private boolean preMouseOnStone = false;
+  public BoardHistoryNode mouseOnNode;
+  public int[] mouseOnStoneCoords = LizzieFrame.outOfBoundCoordinate;
 
   public Board() {
     initialize(false);
@@ -135,6 +139,10 @@ public class Board {
    * @return an optional array of coordinates, empty for pass and resign
    */
   public static Optional<int[]> asCoordinates(String namedCoordinate) {
+    return asCoordinates(namedCoordinate, boardHeight);
+  }
+
+  public static Optional<int[]> asCoordinates(String namedCoordinate, int boardHeight) {
     namedCoordinate = namedCoordinate.trim();
     if (namedCoordinate.equalsIgnoreCase("pass") || namedCoordinate.equalsIgnoreCase("resign")) {
       return Optional.empty();
@@ -246,6 +254,13 @@ public class Board {
     } else {
       return coordsAsName(x) + (boardHeight - y);
     }
+  }
+
+  public static int[] convertNameToCoordinates(String name, int boardHeight) {
+    // coordinates take the form C16 A19 Q5 K10 etc. I is not used.
+    Optional<int[]> coords = asCoordinates(name, boardHeight);
+    if (coords.isPresent()) return coords.get();
+    else return LizzieFrame.outOfBoundCoordinate;
   }
 
   public static int[] convertNameToCoordinates(String name) {
@@ -375,8 +390,6 @@ public class Board {
         BoardHistoryNode cur = stack.pop();
         if (cur.getData().getPlayouts() > 0) {
           cur.getData().isChanged = true;
-          cur.nodeInfo.changed = true;
-          cur.nodeInfoMain.changed = true;
         }
         if (cur.numberOfChildren() >= 1) {
           for (int i = cur.numberOfChildren() - 1; i >= 0; i--)
@@ -450,16 +463,7 @@ public class Board {
     stack.push(node);
     while (!stack.isEmpty()) {
       BoardHistoryNode cur = stack.pop();
-      if (cur.getData().getPlayouts() > 0) {
-        cur.nodeInfo.changed = true;
-        cur.nodeInfoMain.changed = true;
-      }
-      if (Lizzie.config.isDoubleEngineMode()) {
-        if (cur.getData().getPlayouts2() > 0) {
-          cur.nodeInfo2.changed = true;
-          cur.nodeInfoMain2.changed = true;
-        }
-      }
+      if (Lizzie.config.isDoubleEngineMode()) {}
       if (cur.numberOfChildren() >= 1) {
         for (int i = cur.numberOfChildren() - 1; i >= 0; i--)
           stack.push(cur.getVariations().get(i));
@@ -488,8 +492,6 @@ public class Board {
       BoardHistoryNode cur = stack.pop();
       if (cur.getData().getPlayouts2() > 0) {
         cur.getData().isChanged2 = true;
-        cur.nodeInfo2.changed = true;
-        cur.nodeInfoMain2.changed = true;
       }
       if (cur.numberOfChildren() >= 1) {
         for (int i = cur.numberOfChildren() - 1; i >= 0; i--)
@@ -1564,11 +1566,11 @@ public class Board {
       Lizzie.frame.estimateResults.iscounted = false;
       Lizzie.frame.isCounting = false;
     }
-    updateWinrate();
-    if (EngineManager.isEngineGame) SGFParser.appendTime();
     synchronized (this) {
       if (!isValid(x, y) || (history.getStones()[getIndex(x, y)] != Stone.EMPTY && !newBranch))
         return;
+      updateWinrate();
+      if (EngineManager.isEngineGame) SGFParser.appendTime();
       // modifyStart();
       if (!forSync
           && !Lizzie.frame.bothSync
@@ -1787,11 +1789,11 @@ public class Board {
     }
   }
 
-  public int getcurrentmovenumber() {
+  public int getCurrentMovenumber() {
     return history.getCurrentHistoryNode().getData().moveNumber;
   }
 
-  public int getmovenumberinbranch(int index) {
+  public int getMovenumberInBranch(int index) {
     return history.getCurrentHistoryNode().getData().moveNumberList[index];
   }
 
@@ -2303,7 +2305,6 @@ public class Board {
   }
 
   public boolean goToMoveNumber(int moveNumber) {
-
     return goToMoveNumberHelper(moveNumber, false);
   }
 
@@ -2531,7 +2532,10 @@ public class Board {
         // Will delete more than one move, ask for confirmation
         int ret =
             JOptionPane.showConfirmDialog(
-                Lizzie.frame, "这个操作将会清空后续所有步数和分支", "删除", JOptionPane.OK_CANCEL_OPTION);
+                Lizzie.frame,
+                Lizzie.resourceBundle.getString("LizzieFrame.deleteMoves"),
+                Lizzie.resourceBundle.getString("LizzieFrame.delete"),
+                JOptionPane.OK_CANCEL_OPTION);
         if (ret != JOptionPane.OK_OPTION) {
           return;
         }
@@ -2669,7 +2673,6 @@ public class Board {
 
   public void copyNodeInfoToMain(BoardHistoryNode node) {
     node.nodeInfoMain.analyzed = node.nodeInfo.analyzed;
-    node.nodeInfoMain.changed = node.nodeInfo.changed;
     node.nodeInfoMain.coords = node.nodeInfo.coords;
     node.nodeInfoMain.moveNum = node.nodeInfo.moveNum;
     node.nodeInfoMain.isBlack = node.nodeInfo.isBlack;
@@ -2710,8 +2713,7 @@ public class Board {
   //	    initializeForPk();
   //	  }
   public void clear(boolean isEngineGame) {
-    if (isEngineGame) LizzieFrame.winrateGraph.maxcoreMean = 15;
-    else LizzieFrame.winrateGraph.maxcoreMean = 30;
+    LizzieFrame.winrateGraph.resetMaxScoreLead();
     if (Lizzie.frame.readBoard != null) {
       Lizzie.frame.readBoard.firstSync = true;
     }
@@ -2752,7 +2754,7 @@ public class Board {
       Lizzie.frame.readBoard.firstSync = true;
     }
     Lizzie.frame.resetTitle();
-    LizzieFrame.winrateGraph.maxcoreMean = 30;
+    LizzieFrame.winrateGraph.resetMaxScoreLead();
     hasStartStone = false;
     startStonelist = new ArrayList<Movelist>();
     movelistwr.clear();
@@ -3107,16 +3109,11 @@ public class Board {
     BoardHistoryNode previousNode = node.previous().get();
     int movenumer = node.getData().moveNumber;
     int playouts = node.getData().getPlayouts();
-    if ((playouts > previousNode.nodeInfo.playouts
-            || node.previous().get().getData().getPlayouts()
-                > previousNode.nodeInfo.previousPlayouts
-            || previousNode.nodeInfo.changed
-            || (previousNode.nodeInfo.nextNode != null && previousNode.nodeInfo.nextNode != node))
-        && previousNode.getData().winrate >= 0) {
-      if (previousNode.nodeInfo.changed) {
-        previousNode.nodeInfo.changed = false;
-      }
-
+    if (((playouts != previousNode.nodeInfo.playouts
+                || node.previous().get().getData().getPlayouts()
+                    != previousNode.nodeInfo.previousPlayouts)
+            && previousNode.getData().winrate >= 0)
+        || previousNode.getData().playoutsChanged) {
       double winrateDiff = lastWinrateDiff(node);
       if (Lizzie.board.isPkBoard && playouts > 0) {
         if (node.isMainTrunk() && node.previous().get().isMainTrunk()) {
@@ -3135,7 +3132,6 @@ public class Board {
             previousNode.nodeInfo.playouts = playouts;
             previousNode.nodeInfo.moveNum = movenumer;
             previousNode.nodeInfo.previousPlayouts = previousplayouts;
-            previousNode.nodeInfo.nextNode = node;
             if (node.getData().isKataData) {
               node.nodeInfo.scoreMeanDiff = lastScoreMeanDiff(node);
               previousNode.nodeInfo.scoreLead = node.getData().scoreMean;
@@ -3145,17 +3141,16 @@ public class Board {
         }
       } else {
         if (node.getData().lastMove != null && node.getData().lastMove.isPresent()) {
-          Map<String, Object> matchAiMap =
+          MatchAiInfo info =
               isMatchAi(node, Lizzie.config.matchAiMoves, Lizzie.config.matchAiPercentsPlayouts);
-          double percentsMatch =
-              Double.parseDouble(matchAiMap.getOrDefault("percents", "0").toString());
-          boolean isBest = Boolean.parseBoolean(matchAiMap.getOrDefault("best", false).toString());
-          boolean isMatchAi = Boolean.parseBoolean(matchAiMap.get("match").toString());
-
+          double percentsMatch = info.precents;
+          boolean isBest = info.isBest;
+          boolean isMatchAi = info.isMatch;
+          node.getData().lastMoveMatchCandidteNo = info.matchCandidteNo;
           int[] coords = node.getData().lastMove.get();
-
           boolean isblack = !node.getData().blackToPlay;
           int previousplayouts = 0;
+
           previousplayouts = previousNode.getData().getPlayouts();
           previousNode.nodeInfo.analyzed = previousplayouts > 0 && playouts > 0;
           previousNode.nodeInfo.analyzedMatchValue = previousplayouts > 0;
@@ -3175,7 +3170,6 @@ public class Board {
           previousNode.nodeInfo.previousPlayouts = previousplayouts;
           previousNode.nodeInfo.isMatchAi = isMatchAi;
           previousNode.nodeInfo.percentsMatch = percentsMatch;
-          previousNode.nodeInfo.nextNode = node;
           if (node.isMainTrunk() && node.previous().get().isMainTrunk()) {
             previousNode.nodeInfoMain.analyzed = previousplayouts > 0 && playouts > 0;
             previousNode.nodeInfoMain.analyzedMatchValue = previousplayouts > 0;
@@ -3198,6 +3192,7 @@ public class Board {
           }
         }
       }
+      previousNode.getData().playoutsChanged = false;
     }
   }
 
@@ -3208,15 +3203,10 @@ public class Board {
     BoardHistoryNode previousNode = node.previous().get();
     int movenumer = node.getData().moveNumber;
     int playouts = node.getData().getPlayouts2();
-    if ((playouts > previousNode.nodeInfo2.playouts
+    if ((playouts != previousNode.nodeInfo2.playouts
             || node.previous().get().getData().getPlayouts2()
-                > previousNode.nodeInfo2.previousPlayouts
-            || previousNode.nodeInfo2.changed
-            || (previousNode.nodeInfo2.nextNode != null && previousNode.nodeInfo2.nextNode != node))
+                != previousNode.nodeInfo2.previousPlayouts)
         && previousNode.getData().winrate2 >= 0) {
-      if (previousNode.nodeInfo2.changed) {
-        previousNode.nodeInfo2.changed = false;
-      }
       double winrateDiff = lastWinrateDiff2(node);
       if (Lizzie.board.isPkBoard) {
         if (node.getData().lastMove.isPresent()
@@ -3234,7 +3224,6 @@ public class Board {
           previousNode.nodeInfo2.playouts = playouts;
           previousNode.nodeInfo2.moveNum = movenumer;
           previousNode.nodeInfo2.previousPlayouts = previousplayouts;
-          previousNode.nodeInfo2.nextNode = node;
           if (node.getData().isKataData2) {
             previousNode.nodeInfo2.scoreMeanDiff = lastScoreMeanDiff2(node);
             previousNode.nodeInfo2.scoreLead = node.getData().scoreMean2;
@@ -3242,12 +3231,11 @@ public class Board {
         }
       } else {
         if (node.getData().lastMove != null && node.getData().lastMove.isPresent()) {
-          Map<String, Object> matchAiMap =
+          MatchAiInfo info =
               isMatchAi2(node, Lizzie.config.matchAiMoves, Lizzie.config.matchAiPercentsPlayouts);
-          double percentsMatch =
-              Double.parseDouble(matchAiMap.getOrDefault("percents", "0").toString());
-          boolean isBest = Boolean.parseBoolean(matchAiMap.getOrDefault("best", false).toString());
-          boolean isMatchAi = Boolean.parseBoolean(matchAiMap.get("match").toString());
+          double percentsMatch = info.precents;
+          boolean isBest = info.isBest;
+          boolean isMatchAi = info.isMatch;
           int[] coords = node.getData().lastMove.get();
           boolean isblack = !node.getData().blackToPlay;
           int previousplayouts = 0;
@@ -3270,7 +3258,6 @@ public class Board {
           previousNode.nodeInfo2.previousPlayouts = previousplayouts;
           previousNode.nodeInfo2.isMatchAi = isMatchAi;
           previousNode.nodeInfo2.percentsMatch = percentsMatch;
-          previousNode.nodeInfo2.nextNode = node;
 
           if (node.isMainTrunk()) {
             previousNode.nodeInfoMain2.analyzed = previousplayouts > 0 && playouts > 0;
@@ -3306,15 +3293,20 @@ public class Board {
     updateMovelist(nextnextNode);
   }
 
-  private Map<String, Object> isMatchAi(
-      BoardHistoryNode node, int bestNums, double percentPlayouts) {
+  class MatchAiInfo {
+    boolean isBest;
+    double precents;
+    int matchCandidteNo;
+    boolean isMatch;
+  }
+
+  private MatchAiInfo isMatchAi(BoardHistoryNode node, int bestNums, double percentPlayouts) {
     BoardData preNodeData = node.previous().get().getData();
-    Map<String, Object> map = new HashMap<String, Object>();
+    MatchAiInfo info = new MatchAiInfo();
     boolean hasPut = false;
     if (preNodeData.bestMoves.isEmpty()) {
-      map.put("match", false);
+      info.isMatch = false;
       hasPut = true;
-      // return false;
     }
     double maxPlayouts = 0;
     for (MoveData move : preNodeData.bestMoves) {
@@ -3331,27 +3323,27 @@ public class Board {
           if (c[0] == lastMoveCoords[0] && c[1] == lastMoveCoords[1]) {
             if ((preNodeData.bestMoves.get(i).playouts / maxPlayouts) * 100 >= percentPlayouts
                 && i < bestNums) {
-              if (i == 0) map.put("best", true);
-              map.put("match", true);
+              if (i == 0) info.isBest = true;
+              info.isMatch = true;
               hasPut = true;
             }
-            if (i == 0) map.put("percents", 1);
-            else map.put("percents", preNodeData.bestMoves.get(i).playouts / maxPlayouts);
+            if (i == 0) info.precents = 1;
+            else info.precents = preNodeData.bestMoves.get(i).playouts / maxPlayouts;
+            info.matchCandidteNo = i + 1;
           }
         }
       }
     }
-    if (!hasPut) map.put("match", false);
-    return map;
+    if (!hasPut) info.isMatch = false;
+    return info;
   }
 
-  private Map<String, Object> isMatchAi2(
-      BoardHistoryNode node, int bestNums, double percentPlayouts) {
+  private MatchAiInfo isMatchAi2(BoardHistoryNode node, int bestNums, double percentPlayouts) {
     BoardData preNodeData = node.previous().get().getData();
-    Map<String, Object> map = new HashMap<String, Object>();
+    MatchAiInfo info = new MatchAiInfo();
     boolean hasPut = false;
     if (preNodeData.bestMoves2.isEmpty()) {
-      map.put("match", false);
+      info.isMatch = false;
       hasPut = true;
       // return false;
     }
@@ -3370,18 +3362,18 @@ public class Board {
           if (c[0] == lastMoveCoords[0] && c[1] == lastMoveCoords[1]) {
             if ((preNodeData.bestMoves2.get(i).playouts / maxPlayouts) * 100 >= percentPlayouts
                 && i < bestNums) {
-              if (i == 0) map.put("best", true);
-              map.put("match", true);
+              if (i == 0) info.isBest = true;
+              info.isMatch = true;
               hasPut = true;
             }
-            if (i == 0) map.put("percents", 1);
-            else map.put("percents", preNodeData.bestMoves2.get(i).playouts / maxPlayouts);
+            if (i == 0) info.precents = 1;
+            else info.precents = preNodeData.bestMoves2.get(i).playouts / maxPlayouts;
           }
         }
       }
     }
-    if (!hasPut) map.put("match", false);
-    return map;
+    if (!hasPut) info.isMatch = false;
+    return info;
   }
 
   public void updateIsBest(BoardHistoryNode node) {
@@ -3899,25 +3891,36 @@ public class Board {
   public void showGroupResult() {
     Lizzie.frame.drawScore(boardGroupInfo);
     int blackAlive = 0, blackPoint = 0, whiteAlive = 0, whitePoint = 0;
+    int blackCaptures = 0, whiteCaptures = 0;
+    blackCaptures = Lizzie.board.getData().blackCaptures;
+    whiteCaptures = Lizzie.board.getData().whiteCaptures;
     double komi = getHistory().getGameInfo().getKomi();
     for (int j = 0; j < boardHeight; j++) {
       for (int i = 0; i < boardWidth; i++) {
         if (!boardGroupInfo.groupStatus[i][j].isMarkedEmpty)
           if (boardGroupInfo.groupStatus[i][j].value == 1) {
             if (boardGroupInfo.oriStones[getIndex(i, j)] == Stone.BLACK) blackAlive++;
-            else blackPoint++;
+            else {
+              if (boardGroupInfo.oriStones[getIndex(i, j)] == Stone.WHITE) blackCaptures++;
+              blackPoint++;
+            }
           } else if (boardGroupInfo.groupStatus[i][j].value == 2) {
             if (boardGroupInfo.oriStones[getIndex(i, j)] == Stone.WHITE) whiteAlive++;
-            else whitePoint++;
+            else {
+              if (boardGroupInfo.oriStones[getIndex(i, j)] == Stone.BLACK) whiteCaptures++;
+              whitePoint++;
+            }
           }
       }
     }
     if (boardGroupInfo.scoreResult == null) {
       boardGroupInfo.scoreResult = new ScoreResult(Lizzie.frame);
-      boardGroupInfo.scoreResult.setScore(blackAlive, blackPoint, whiteAlive, whitePoint, komi);
+      boardGroupInfo.scoreResult.setScore(
+          blackAlive, blackPoint, whiteAlive, whitePoint, blackCaptures, whiteCaptures, komi);
       boardGroupInfo.scoreResult.setVisible(true);
     } else {
-      boardGroupInfo.scoreResult.setScore(blackAlive, blackPoint, whiteAlive, whitePoint, komi);
+      boardGroupInfo.scoreResult.setScore(
+          blackAlive, blackPoint, whiteAlive, whitePoint, blackCaptures, whiteCaptures, komi);
       boardGroupInfo.scoreResult.setVisible(true);
     }
   }
@@ -4183,5 +4186,112 @@ public class Board {
 
   private boolean isValidEmpty(int x, int y) {
     return isValid(x, y) && isCoordsEmpty(x, y);
+  }
+
+  public boolean isFirstWhiteNodeWithHandicap(BoardHistoryNode node) {
+    // TODO Auto-generated method stub
+    if (node.getData().lastMove.isPresent() && node.getData().lastMoveColor != Stone.WHITE) {
+      return false;
+    }
+    int blackStones = 0;
+    while (node.previous().isPresent()) {
+      node = node.previous().get();
+      if (node.getData().lastMove.isPresent())
+        if (node.getData().lastMoveColor == Stone.WHITE) {
+          return false;
+        }
+      if (node.getData().lastMoveColor == Stone.BLACK) blackStones++;
+    }
+    if (blackStones > 1) return true;
+    else return false;
+  }
+
+  public boolean hasStoneAt(int[] coords) {
+    if (history.getStones()[getIndex(coords[0], coords[1])] != Stone.EMPTY) return true;
+    return false;
+  }
+
+  public void clearPressStoneInfo(int[] coords) {
+    if (preMouseOnStone) {
+      if (coords == null
+          || coords[0] != mouseOnStoneCoords[0]
+          || coords[1] != mouseOnStoneCoords[1]) {
+        isMouseOnStone = false;
+        preMouseOnStone = false;
+        mouseOnStoneCoords = LizzieFrame.outOfBoundCoordinate;
+        if (reviewThread != null) reviewThread.interrupt();
+        Lizzie.frame.refresh();
+      }
+    }
+  }
+
+  public void setPressStoneInfo(int[] coords) {
+    if (!Lizzie.config.enableClickReview) {
+      return;
+    }
+    isMouseOnStone = false;
+    preMouseOnStone = true;
+    mouseOnStoneCoords = coords;
+    mouseOnNode = null;
+    Runnable runnable =
+        new Runnable() {
+          public void run() {
+            try {
+              Thread.sleep(50);
+            } catch (InterruptedException e) {
+              // TODO Auto-generated catch block
+              e.printStackTrace();
+            }
+            if (preMouseOnStone) {
+              isMouseOnStone = true;
+              BoardHistoryNode node = getHistory().getCurrentHistoryNode();
+              while (node.previous().isPresent()) {
+                if (node.getData().lastMove.isPresent()) {
+                  if (node.getData().lastMove.get()[0] == mouseOnStoneCoords[0]
+                      && node.getData().lastMove.get()[1] == mouseOnStoneCoords[1]) {
+                    mouseOnNode = node.previous().get();
+                    break;
+                  }
+                }
+                node = node.previous().get();
+              }
+              if (mouseOnNode != null) {
+                isMouseOnStone = true;
+                startReviewThread();
+              } else {
+                isMouseOnStone = false;
+                mouseOnStoneCoords = LizzieFrame.outOfBoundCoordinate;
+              }
+            }
+          }
+        };
+    Thread thread = new Thread(runnable);
+    thread.start();
+  }
+
+  private Thread reviewThread;
+  public int reviewLength;
+
+  private void startReviewThread() {
+    int secs = (int) (Lizzie.config.replayBranchIntervalSeconds * 1000);
+    if (reviewThread != null) reviewThread.interrupt();
+    Runnable runnable =
+        new Runnable() {
+          public void run() {
+            reviewLength = 1;
+            Lizzie.frame.refresh();
+            while (isMouseOnStone) {
+              try {
+                Thread.sleep(secs);
+              } catch (InterruptedException e) {
+                return;
+              }
+              reviewLength++;
+              Lizzie.frame.refresh();
+            }
+          }
+        };
+    reviewThread = new Thread(runnable);
+    reviewThread.start();
   }
 }

@@ -129,7 +129,7 @@ public class Input implements MouseListener, KeyListener, MouseWheelListener, Mo
 
   @Override
   public void mouseDragged(MouseEvent e) {
-    if (Lizzie.frame.isPlayingAgainstLeelaz) return;
+    if (Lizzie.frame.isPlayingAgainstLeelaz || Lizzie.frame.isContributing) return;
     if (!SwingUtilities.isMiddleMouseButton(e) && (selectMode || e.isAltDown())) {
       Lizzie.frame.selectDragged(Utils.zoomOut(e.getX()), Utils.zoomOut(e.getY()));
       return;
@@ -162,7 +162,8 @@ public class Input implements MouseListener, KeyListener, MouseWheelListener, Mo
         Lizzie.frame.DraggedMoved(Utils.zoomOut(e.getX()), Utils.zoomOut(e.getY()));
         return;
       }
-      Lizzie.frame.onMouseMoved(Utils.zoomOut(e.getX()), Utils.zoomOut(e.getY()));
+      if (!Lizzie.frame.onMouseMoved(Utils.zoomOut(e.getX()), Utils.zoomOut(e.getY())))
+        Lizzie.board.clearPressStoneInfo(null);
       // Lizzie.frame.processCommentMouseOverd(e);
     }
   }

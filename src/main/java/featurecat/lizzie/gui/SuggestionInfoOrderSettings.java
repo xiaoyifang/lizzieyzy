@@ -23,6 +23,8 @@ import java.awt.TexturePaint;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -38,6 +40,7 @@ import javax.swing.Timer;
 public class SuggestionInfoOrderSettings extends JDialog {
   private PanelWithToolTips middlePanel;
   private PanelWithToolTips infoPanel;
+  private Timer timer;
   private JPanel previewPanel;
   private JFontRadioButton rdoWinrate3;
   private JFontRadioButton rdoWinrate2;
@@ -301,7 +304,7 @@ public class SuggestionInfoOrderSettings extends JDialog {
     infoPanel.add(cancelButton);
     //  setSize(500, 400);
 
-    Timer timer =
+    timer =
         new Timer(
             100,
             new ActionListener() {
@@ -319,6 +322,12 @@ public class SuggestionInfoOrderSettings extends JDialog {
       // TODO Auto-generated catch block
       e1.printStackTrace();
     }
+    addWindowListener(
+        new WindowAdapter() {
+          public void windowClosing(WindowEvent e) {
+            if (timer != null) timer.stop();
+          }
+        });
     this.setLocationRelativeTo(owner);
   }
 
@@ -665,7 +674,7 @@ public class SuggestionInfoOrderSettings extends JDialog {
         boolean shouldShowMaxColorScoreLead = canShowMaxColor && move.scoreMean == maxScoreMean;
         String winrateText = String.format(Locale.ENGLISH, "%.1f", roundedWinrate);
         String playoutsText = Utils.getPlayoutsString(move.playouts);
-        String scoreLeadText = String.format(Locale.ENGLISH, "%.1f", score);
+        String scoreLeadText = Utils.convertScoreToString(score, 5.0);
         if (currerentUseDefaultInfoRowOrder) {
           if (shouldShowMaxColorWinrate) g.setColor(maxColor);
           if (roundedWinrate < 10)
@@ -864,7 +873,7 @@ public class SuggestionInfoOrderSettings extends JDialog {
           }
         }
         String winrateText = String.format(Locale.ENGLISH, "%.1f", roundedWinrate);
-        String scoreLeadText = String.format(Locale.ENGLISH, "%.1f", score);
+        String scoreLeadText = Utils.convertScoreToString(score, 5.0);
         if (currerentUseDefaultInfoRowOrder
             || currentSuggestionInfoWinrate < currentSuggestionInfoScoreLead) {
           if (shouldShowMaxColorWinrate) g.setColor(maxColor);
@@ -944,7 +953,7 @@ public class SuggestionInfoOrderSettings extends JDialog {
           }
         }
         String playoutsText = Utils.getPlayoutsString(move.playouts);
-        String scoreLeadText = String.format(Locale.ENGLISH, "%.1f", score);
+        String scoreLeadText = Utils.convertScoreToString(score, 5.0);
         if (currerentUseDefaultInfoRowOrder
             || currentSuggestionInfoPlayouts < currentSuggestionInfoScoreLead) {
           if (shouldShowMaxColorPlayouts) g.setColor(maxColor);
@@ -1046,13 +1055,14 @@ public class SuggestionInfoOrderSettings extends JDialog {
           }
         }
         boolean shouldShowMaxColorScoreLead = canShowMaxColor && move.scoreMean == maxScoreMean;
+        String scoreLeadText = Utils.convertScoreToString(score, 5.0);
         if (shouldShowMaxColorScoreLead) g.setColor(maxColor);
         drawString(
             g,
             suggestionX,
             suggestionY,
             LizzieFrame.winrateFont,
-            String.format(Locale.ENGLISH, "%.1f", score),
+            scoreLeadText,
             stoneRadius,
             stoneRadius * 1.7);
         if (shouldShowMaxColorScoreLead) g.setColor(oriColor);

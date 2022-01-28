@@ -146,8 +146,8 @@ public class SocketUpfile {
       th.start();
       while ((str = br.readLine()) != null) {
         recievedServer = true;
-        System.out.println(str);
-        Lizzie.gtpConsole.addLine(str);
+        // System.out.println(str);
+        // Lizzie.gtpConsole.addLine(str);
         if (str.startsWith("http")) {
           link = str;
           success = true;
@@ -176,7 +176,7 @@ public class SocketUpfile {
     } finally {
       if (socket != null)
         try {
-          System.out.println("close......");
+          // System.out.println("close......");
           br.close();
           pw.close();
           socket.close();

@@ -261,6 +261,7 @@ public class MoveListFrame extends JFrame {
         new WindowAdapter() {
           public void windowClosing(WindowEvent e) {
             Lizzie.frame.toggleBadMoves();
+            if (timer != null) timer.stop();
           }
         });
 
@@ -310,8 +311,8 @@ public class MoveListFrame extends JFrame {
     dataModel = getTableModel();
     table = new JTable(dataModel);
 
-    winrateFont = new Font("Microsoft YaHei", Font.BOLD, Math.max(Config.frameFontSize, 14));
-    headFont = new Font("Microsoft YaHei", Font.PLAIN, Math.max(Config.frameFontSize, 13));
+    winrateFont = new Font(Lizzie.config.uiFontName, Font.BOLD, Math.max(Config.frameFontSize, 14));
+    headFont = new Font(Lizzie.config.uiFontName, Font.PLAIN, Math.max(Config.frameFontSize, 13));
 
     table.getTableHeader().setFont(headFont);
     table.getTableHeader().setReorderingAllowed(false);
@@ -418,8 +419,7 @@ public class MoveListFrame extends JFrame {
     statisticsGraph.add(keyPanel);
     statisticsGraph.add(lossPanel);
 
-    chkCurrent =
-        new JCheckBox(Lizzie.resourceBundle.getString("Movelistframe.lblShowBranchItemCurrent"));
+    chkCurrent = new JCheckBox(Lizzie.resourceBundle.getString("Movelistframe.current"));
     chkCurrent.addActionListener(
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
@@ -655,6 +655,13 @@ public class MoveListFrame extends JFrame {
         Lizzie.resourceBundle.getString("Movelistframe.winrateBigMistake"), bigMistakePanel);
     bottomPanel.addTab(
         Lizzie.resourceBundle.getString("Movelistframe.scoreBigMistake"), bigScoreMistakePanel);
+
+    bottomPanel.addChangeListener(
+        new ChangeListener() {
+          public void stateChanged(ChangeEvent e) {
+            Utils.changeFontRecursive(bottomPanel, Config.sysDefaultFontName);
+          }
+        });
 
     matchPanelAll.setLayout(new BorderLayout());
     matchGraphAll.setLayout(new BorderLayout());
@@ -1262,7 +1269,6 @@ public class MoveListFrame extends JFrame {
             Lizzie.config.analyzeUpdateIntervalCentisec * 20,
             new ActionListener() {
               public void actionPerformed(ActionEvent evt) {
-                if (!isVisible()) return;
                 refreshCount = refreshCount + 1;
                 if (refreshCount > 9) {
                   refreshCount = 0;
@@ -1857,6 +1863,7 @@ public class MoveListFrame extends JFrame {
             minTable2.repaint();
           }
         });
+    Utils.changeFontRecursive(bottomPanel, Config.sysDefaultFontName);
   }
 
   private void applyChkPeriod() {
@@ -3312,7 +3319,7 @@ public class MoveListFrame extends JFrame {
 
     if (selectedIndex != 0) g.fillRect(posx, posy, width + 5, height);
     else g.fillRect(posx, posy, width + 2, height);
-    if (Lizzie.board.isPkBoard) {
+    if (Lizzie.board.isPkBoard && !Lizzie.frame.isShowingContributeGame) {
       g.setColor(new Color(0, 0, 0, 180));
       drawString(
           g,
@@ -5808,7 +5815,7 @@ public class MoveListFrame extends JFrame {
               if (!node.getData().blackToPlay) {
                 curscoreMean = -curscoreMean;
               }
-              if (Lizzie.config.scoreMeanWinrateGraphBoard)
+              if (Lizzie.config.showKataGoScoreLeadWithKomi)
                 curscoreMean = curscoreMean + Lizzie.board.getHistory().getGameInfo().getKomi();
 
               if (node == curMove) {

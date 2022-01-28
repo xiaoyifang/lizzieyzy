@@ -18,8 +18,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.jdesktop.swingx.util.OS;
@@ -33,7 +31,7 @@ public class ReadBoard {
   // private long startSyncTime = 0;
 
   public boolean isLoaded = false;
-  private int version = 1108;
+  private int version = 220104;
   private String engineCommand;
   public String currentEnginename = "";
   private int port = -1;
@@ -52,7 +50,7 @@ public class ReadBoard {
   private boolean isSyncing = false;
   // private long startTime;
   private boolean javaReadBoard = false;
-  private String javaReadBoardName = "readboard-1.5.5-shaded.jar";
+  private String javaReadBoardName = "readboard-1.5.7-shaded.jar";
   private boolean waitSocket = true;
   public boolean lastMovePlayByLizzie = false;
   private boolean hideFloadBoardBeforePlace = false;
@@ -98,60 +96,12 @@ public class ReadBoard {
   }
 
   public void startEngine(String engineCommand, int index) throws Exception {
-    if (!usePipe) {
-      waitSocket = true;
-      noMsg = false;
-      Runnable runnable2 =
-          new Runnable() {
-            public void run() {
-              if (s == null || s.isClosed()) createSocketServer();
-            }
-          };
-      Thread thread2 = new Thread(runnable2);
-      thread2.start();
-      int times = 300;
-      while (waitSocket && times > 0) {
-        Thread.sleep(10);
-        times--;
-      }
-    }
-    List<String> commands = new ArrayList<String>();
-    commands.add(engineCommand);
-    commands.add("yzy");
-    commands.add(
-        !LizzieFrame.toolbar.chkAutoPlayTime.isSelected()
-                || LizzieFrame.toolbar.txtAutoPlayTime.getText().equals("")
-            ? " "
-            : LizzieFrame.toolbar.txtAutoPlayTime.getText());
-    commands.add(
-        !LizzieFrame.toolbar.chkAutoPlayPlayouts.isSelected()
-                || LizzieFrame.toolbar.txtAutoPlayPlayouts.getText().equals("")
-            ? " "
-            : LizzieFrame.toolbar.txtAutoPlayPlayouts.getText());
-    commands.add(
-        !LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.isSelected()
-                || LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.getText().equals("")
-            ? " "
-            : LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.getText());
-
-    if (usePipe) commands.add("0");
-    else commands.add("1");
-    // if (Lizzie.config.isChinese)
-    commands.add(Lizzie.resourceBundle.getString("ReadBoard.language"));
-    // else commands.add("1");
-    if (usePipe) commands.add("-1");
-    else commands.add(String.valueOf(port));
-    ProcessBuilder processBuilder = new ProcessBuilder(commands);
-    processBuilder.directory(new File("readboard"));
-    processBuilder.redirectErrorStream(true);
     if (javaReadBoard) {
       File javaReadBoard = new File("readboard_java" + File.separator + javaReadBoardName);
       if (!javaReadBoard.exists()) {
         Utils.deleteDir(new File("readboard_java"));
         Utils.copyReadBoardJava(javaReadBoardName);
       }
-    }
-    if (javaReadBoard) {
       // 共传入5个参数,语言 是否java外观 字体大小 宽 高
       String param = "";
       param = param + " " + Lizzie.resourceBundle.getString("ReadBoard.language") + " ";
@@ -223,6 +173,52 @@ public class ReadBoard {
         Utils.showMsg(e.getLocalizedMessage());
       }
     } else {
+      if (!usePipe) {
+        waitSocket = true;
+        noMsg = false;
+        Runnable runnable2 =
+            new Runnable() {
+              public void run() {
+                if (s == null || s.isClosed()) createSocketServer();
+              }
+            };
+        Thread thread2 = new Thread(runnable2);
+        thread2.start();
+        int times = 300;
+        while (waitSocket && times > 0) {
+          Thread.sleep(10);
+          times--;
+        }
+      }
+      List<String> commands = new ArrayList<String>();
+      commands.add(engineCommand);
+      commands.add("yzy");
+      commands.add(
+          !LizzieFrame.toolbar.chkAutoPlayTime.isSelected()
+                  || LizzieFrame.toolbar.txtAutoPlayTime.getText().equals("")
+              ? " "
+              : LizzieFrame.toolbar.txtAutoPlayTime.getText());
+      commands.add(
+          !LizzieFrame.toolbar.chkAutoPlayPlayouts.isSelected()
+                  || LizzieFrame.toolbar.txtAutoPlayPlayouts.getText().equals("")
+              ? " "
+              : LizzieFrame.toolbar.txtAutoPlayPlayouts.getText());
+      commands.add(
+          !LizzieFrame.toolbar.chkAutoPlayFirstPlayouts.isSelected()
+                  || LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.getText().equals("")
+              ? " "
+              : LizzieFrame.toolbar.txtAutoPlayFirstPlayouts.getText());
+
+      if (usePipe) commands.add("0");
+      else commands.add("1");
+      // if (Lizzie.config.isChinese)
+      commands.add(Lizzie.resourceBundle.getString("ReadBoard.language"));
+      // else commands.add("1");
+      if (usePipe) commands.add("-1");
+      else commands.add(String.valueOf(port));
+      ProcessBuilder processBuilder = new ProcessBuilder(commands);
+      if (usePipe) processBuilder.directory(new File("readboard"));
+      processBuilder.redirectErrorStream(true);
       try {
         process = processBuilder.start();
       } catch (IOException e) {
@@ -510,18 +506,18 @@ public class ReadBoard {
           if (Lizzie.frame.floatBoard == null) {
             Lizzie.frame.floatBoard =
                 new FloatBoard(
-                    Math.round(Integer.parseInt(params[1]) * factor) + 1,
-                    Math.round(Integer.parseInt(params[2]) * factor) + 1,
-                    Math.round(Integer.parseInt(params[3]) * factor) + 1,
-                    Math.round(Integer.parseInt(params[4]) * factor) + 1,
+                    (int) Math.ceil(Integer.parseInt(params[1]) * factor),
+                    (int) Math.ceil(Integer.parseInt(params[2]) * factor),
+                    (int) Math.ceil(Integer.parseInt(params[3]) * factor),
+                    (int) Math.ceil(Integer.parseInt(params[4]) * factor),
                     Integer.parseInt(param[2]),
                     true);
           } else {
             Lizzie.frame.floatBoard.setPos(
-                Math.round(Integer.parseInt(params[1]) * factor) + 1,
-                Math.round(Integer.parseInt(params[2]) * factor) + 1,
-                Math.round(Integer.parseInt(params[3]) * factor) + 1,
-                Math.round(Integer.parseInt(params[4]) * factor) + 1,
+                (int) Math.ceil(Integer.parseInt(params[1]) * factor),
+                (int) Math.ceil(Integer.parseInt(params[2]) * factor),
+                (int) Math.ceil(Integer.parseInt(params[3]) * factor),
+                (int) Math.ceil(Integer.parseInt(params[4]) * factor),
                 Integer.parseInt(param[2]));
           }
         } else {
@@ -712,15 +708,17 @@ public class ReadBoard {
     if (firstSync) {
       firstSync = false;
       Lizzie.board.previousMove(true);
-      Timer timer = new Timer();
-      timer.schedule(
-          new TimerTask() {
-            public void run() {
-              Lizzie.frame.lastMove();
-              this.cancel();
-            }
-          },
-          100);
+      new Thread() {
+        public void run() {
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+          }
+          Lizzie.frame.lastMove();
+        }
+      }.start();
     }
     if (Lizzie.frame.isPlayingAgainstLeelaz && needGenmove) {
       if (!Lizzie.board.getHistory().isBlacksTurn() && Lizzie.frame.playerIsBlack) {

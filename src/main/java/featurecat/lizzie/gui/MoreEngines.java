@@ -36,11 +36,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
+import org.json.JSONException;
 
 public class MoreEngines extends JPanel {
   public static Config config;
@@ -53,7 +53,7 @@ public class MoreEngines extends JPanel {
   Font winrateFont;
   static boolean needUpdateEngine = false;
   static JDialog engjf;
-  Timer timer;
+  // Timer timer;
   int sortnum = 3;
   public static int selectedorder = -1;
   boolean issorted = false;
@@ -99,8 +99,8 @@ public class MoreEngines extends JPanel {
     setLayout((LayoutManager) null);
     this.dataModel = getTableModel();
     table = new JTable(this.dataModel);
-    this.winrateFont = new Font("Microsoft YaHei", 0, Math.max(Config.frameFontSize, 14));
-    this.headFont = new Font("Microsoft YaHei", 0, Math.max(Config.frameFontSize, 13));
+    this.winrateFont = new Font(Config.sysDefaultFontName, 0, Math.max(Config.frameFontSize, 14));
+    this.headFont = new Font(Config.sysDefaultFontName, 0, Math.max(Config.frameFontSize, 13));
     table.getTableHeader().setFont(this.headFont);
     table.setFont(this.winrateFont);
     table.getTableHeader().setReorderingAllowed(false);
@@ -137,7 +137,7 @@ public class MoreEngines extends JPanel {
     table.setFont(this.winrateFont);
     this.engineName = new JFontLabel(this.resourceBundle.getString("MoreEngines.engineName"));
     this.engineName.setForeground(Color.BLUE);
-    this.engineName.setFont(new Font("Microsoft YaHei", 0, 14));
+    this.engineName.setFont(new Font(Lizzie.config.uiFontName, 0, 14));
     JFontLabel lblName = new JFontLabel(this.resourceBundle.getString("MoreEngines.lblName"));
     this.txtName = new JFontTextField();
     this.txtName.setFont(new Font(Config.sysDefaultFontName, 0, Config.frameFontSize));
@@ -610,17 +610,11 @@ public class MoreEngines extends JPanel {
     startGroup.add(this.rdoLast);
     startGroup.add(this.rdoMannul);
     startGroup.add(this.rdoNone);
-    if (Lizzie.config.uiConfig.optBoolean("autoload-default", false)) {
-      if (Lizzie.config.uiConfig.optBoolean("autoload-last", false)) {
-        this.rdoLast.setSelected(true);
-      } else {
-        this.rdoDefault.setSelected(true);
-      }
-    } else {
-      if (Lizzie.config.uiConfig.optBoolean("autoload-empty", false))
-        this.rdoNone.setSelected(true);
-      else this.rdoMannul.setSelected(true);
-    }
+    if (Lizzie.config.uiConfig.optBoolean("autoload-default", false)) rdoDefault.setSelected(true);
+    else if (Lizzie.config.uiConfig.optBoolean("autoload-last", false)) rdoLast.setSelected(true);
+    else if (Lizzie.config.uiConfig.optBoolean("autoload-empty", false)) rdoNone.setSelected(true);
+    else rdoMannul.setSelected(true);
+
     setEnable(false);
     this.selectpanel.add(this.engineName);
     this.selectpanel.add(lblName);
@@ -658,7 +652,7 @@ public class MoreEngines extends JPanel {
         new ActionListener() {
           public void actionPerformed(ActionEvent e) {
             GetEngineLine getEngineLine = new GetEngineLine();
-            String el = getEngineLine.getEngineLine(MoreEngines.engjf, false, false);
+            String el = getEngineLine.getEngineLine(MoreEngines.engjf, false, false, false, false);
             if (!el.isEmpty()) command.setText(el);
             setVisible(true);
           }
@@ -721,7 +715,16 @@ public class MoreEngines extends JPanel {
           public void actionPerformed(ActionEvent e) {
             checkSave();
             MoreEngines.engjf.setVisible(false);
-            if (needUpdateEngine) Lizzie.engineManager.updateEngines();
+            if (needUpdateEngine)
+              try {
+                Lizzie.engineManager.updateEngines();
+              } catch (JSONException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
           }
         });
     this.cancel.addActionListener(
@@ -883,26 +886,21 @@ public class MoreEngines extends JPanel {
   }
 
   public void saveDefaultEngine() {
-    if (this.chkDefault.isSelected()) Lizzie.config.uiConfig.put("default-engine", this.curIndex);
-    if (this.rdoDefault.isSelected()) {
+    // if (this.chkDefault.isSelected()) Lizzie.config.uiConfig.put("default-engine",
+    // this.curIndex);
+    if (rdoDefault.isSelected()) {
       Lizzie.config.uiConfig.put("autoload-default", true);
       Lizzie.config.uiConfig.put("autoload-last", false);
       Lizzie.config.uiConfig.put("autoload-empty", false);
-    } else {
-      Lizzie.config.uiConfig.put("autoload-last", false);
-      Lizzie.config.uiConfig.put("autoload-default", false);
-    }
-    if (this.rdoLast.isSelected()) {
+    } else if (rdoLast.isSelected()) {
       Lizzie.config.uiConfig.put("autoload-last", true);
-      Lizzie.config.uiConfig.put("autoload-default", true);
+      Lizzie.config.uiConfig.put("autoload-default", false);
       Lizzie.config.uiConfig.put("autoload-empty", false);
-    }
-    if (this.rdoMannul.isSelected()) {
+    } else if (rdoMannul.isSelected()) {
       Lizzie.config.uiConfig.put("autoload-last", false);
       Lizzie.config.uiConfig.put("autoload-default", false);
       Lizzie.config.uiConfig.put("autoload-empty", false);
-    }
-    if (rdoNone.isSelected()) {
+    } else if (rdoNone.isSelected()) {
       Lizzie.config.uiConfig.put("autoload-last", false);
       Lizzie.config.uiConfig.put("autoload-default", false);
       Lizzie.config.uiConfig.put("autoload-empty", true);
@@ -1142,7 +1140,7 @@ public class MoreEngines extends JPanel {
     ArrayList<EngineData> engineData = Utils.getEngineData();
     EngineData engineDt = new EngineData();
     engineDt.index = this.curIndex;
-    engineDt.commands = this.command.getText();
+    engineDt.commands = this.command.getText().trim();
     engineDt.name = this.txtName.getText();
     if (txtInitialCommand
         .getText()
@@ -1247,7 +1245,16 @@ public class MoreEngines extends JPanel {
         new WindowAdapter() {
           public void windowClosing(WindowEvent e) {
             MoreEngines.engjf.setVisible(false);
-            if (needUpdateEngine) Lizzie.engineManager.updateEngines();
+            if (needUpdateEngine)
+              try {
+                Lizzie.engineManager.updateEngines();
+              } catch (JSONException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
           }
         });
     MoreEngines newContentPane = new MoreEngines();

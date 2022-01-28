@@ -85,16 +85,15 @@ public class SGFParser {
         }
       }
     }
-    if (isExtraMode2
-        && !Lizzie.config.isDoubleEngineMode()
-        && !Lizzie.config.isAutoAna
-        && showHint) {
-      SwingUtilities.invokeLater(
-          new Runnable() {
-            public void run() {
-              if (Lizzie.config.loadSgfLast) while (Lizzie.board.nextMove(false)) ;
-              Lizzie.board.clearAfterMove();
-              if (showHint) Lizzie.frame.refresh();
+    SwingUtilities.invokeLater(
+        new Runnable() {
+          public void run() {
+            if (Lizzie.config.loadSgfLast) while (Lizzie.board.nextMove(false)) ;
+            Lizzie.board.clearAfterMove();
+            if (isExtraMode2
+                && !Lizzie.config.isDoubleEngineMode()
+                && !Lizzie.config.isAutoAna
+                && showHint) {
               int ret =
                   JOptionPane.showConfirmDialog(
                       Lizzie.frame,
@@ -105,8 +104,9 @@ public class SGFParser {
                 Lizzie.config.toggleExtraMode(2);
               }
             }
-          });
-    }
+          }
+        });
+
     return returnValue;
   }
 
@@ -689,7 +689,8 @@ public class SGFParser {
             if (tagContent.equals("G")) {
               Lizzie.board.isKataBoard = true;
             }
-          } else if (tag.equals("KM")) {
+          } else if (tag.equals("KM")
+              || tag.equals("KO")) { // Cyberoro and some site uses komi tag as KO.
             if (Lizzie.config.readKomi) {
               try {
                 if (!tagContent.trim().isEmpty()) {
@@ -1334,16 +1335,13 @@ public class SGFParser {
     while (node.previous().isPresent()) {
       node = node.previous().get();
       NodeInfo nodeInfo = node.nodeInfoMain;
-      if (node.getData().moveNumber <= Lizzie.config.matchAiLastMove
-          && (node.getData().moveNumber + 1) > Lizzie.config.matchAiFirstMove) {
-        if (nodeInfo.analyzed) {
-          if (node.getData().blackToPlay && isBlack) {
-            matchValue = matchValue + nodeInfo.percentsMatch;
-            analyzed++;
-          } else if (!node.getData().blackToPlay && !isBlack) {
-            matchValue = matchValue + nodeInfo.percentsMatch;
-            analyzed++;
-          }
+      if (nodeInfo.analyzed) {
+        if (node.getData().blackToPlay && isBlack) {
+          matchValue = matchValue + nodeInfo.percentsMatch;
+          analyzed++;
+        } else if (!node.getData().blackToPlay && !isBlack) {
+          matchValue = matchValue + nodeInfo.percentsMatch;
+          analyzed++;
         }
       }
     }
@@ -2534,6 +2532,42 @@ public class SGFParser {
           }
       }
     }
+  }
+
+  public static String getResult(String filename) {
+    File file = new File(filename);
+    if (!file.exists() || !file.canRead()) {
+      return "";
+    }
+    String encoding = EncodingDetector.detect(filename);
+    FileInputStream fp;
+    try {
+      fp = new FileInputStream(file);
+      if (encoding == "WINDOWS-1252") encoding = "GB18030";
+      InputStreamReader reader = new InputStreamReader(fp, encoding);
+      StringBuilder builder = new StringBuilder();
+      while (reader.ready()) {
+        builder.append((char) reader.read());
+      }
+      reader.close();
+      fp.close();
+      String value = builder.toString();
+      if (value.isEmpty()) {
+        Lizzie.board.isLoadingFile = false;
+        return "";
+      }
+      return parseResult(value);
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return "";
+  }
+
+  private static String parseResult(String value) {
+    int tempIndex = value.indexOf("RE[") + 3;
+    String temp = value.substring(tempIndex, Math.min(value.length(), tempIndex + 20));
+    return temp.substring(0, temp.indexOf("]"));
   }
 
   /**
